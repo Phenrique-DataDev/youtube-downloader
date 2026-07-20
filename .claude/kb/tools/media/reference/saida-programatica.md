@@ -159,10 +159,30 @@ yt-dlp --progress-template "download-title:%(info.id)s-%(progress.eta)s" URL
 
 Notas sobre os conversores de template:
 
-- `%(campo)j` serializa como **JSON**, o que produz `null` para valor ausente em vez de
-  `NA` — é o que mantém a linha parseável quando `speed`/`eta` são desconhecidos.
+- **`%(campo)j` sozinho NÃO basta.** Verificado empiricamente (yt-dlp `2026.07.04`,
+  2026-07-20): quando o campo está ausente, o `j` emite **`NA` literal**, não `null` — e
+  `NA` é JSON inválido, então `JSON.parse` lança. Este documento afirmava o contrário até
+  2026-07-20; a correção veio de execução real, não de doc.
+
+  ```bash
+  # ERRADO — quebra o parse quando o campo falta
+  --progress-template 'download:{"est":%(progress.total_bytes_estimate)j}'
+  # saída real:  {"est":NA}          ← JSON.parse lança
+
+  # CERTO — valor default garante linha sempre parseável
+  --progress-template 'download:{"est":%(progress.total_bytes_estimate|0)j}'
+  # saída real:  {"est":0}
+  ```
+
+- **Use sempre a sintaxe de default `%(campo|<default>)j`** em todo campo que pode faltar
+  (`speed`, `eta`, `total_bytes`, `total_bytes_estimate`). É o que mantém a linha
+  parseável sem sanitizar string no lado do Node.
 - `%(campo)d` força inteiro; se o campo for `None`, o resultado depende do conversor —
-  por isso `%(...)j` é a escolha mais segura para tudo que pode faltar.
+  mesma armadilha, mesma solução (default explícito).
+- **Qual campo de total usar não é fixo.** Na mesma medição, `total_bytes` veio preenchido
+  (`18294110`) e `total_bytes_estimate` veio `NA` — o inverso do que se costuma assumir
+  para DASH. Não escolha um dos dois a priori: leia **ambos** com default `0` e use o
+  primeiro não-zero; se os dois forem `0`, caia em `fragment_index`/`fragment_count`.
 - **`postprocess:` é um TYPE separado de `download:`.** Sem ele, a fase de merge/encode
   (que no `AT-002`, MP3, pode ser longa) fica **muda** — a barra congela em 100% e o
   usuário acha que travou. O `SC-2`/`SC-3` dependem de progresso visível o tempo todo.

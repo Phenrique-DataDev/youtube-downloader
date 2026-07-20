@@ -110,12 +110,28 @@ Flags fixas em toda invocação, com a razão de cada uma:
 | `--no-playlist` | URL do YouTube frequentemente carrega `&list=`; playlist está fora de escopo |
 | `--newline` | Sem isso o progresso reescreve a linha com `\r` e o leitor no Node nunca vê `\n` |
 | `--ffmpeg-location <cache>` | Nunca depender do `PATH` do usuário |
-| `--progress-template download:…` e `postprocess:…` | **Dois canais**: sem o segundo, a conversão MP3 fica muda e a barra congela em 100% |
+| `--progress-template download:…` e `postprocess:…` | **Dois canais**: sem o segundo, a conversão MP3 fica muda e a barra congela em 100%. **Todo campo opcional precisa de default** — ver abaixo |
 | `--print after_move:filepath` | Único jeito estável de saber onde o arquivo acabou (`.part` e merge produzem nomes intermediários) |
 | `-o <template do app>` | Nome de saída controlado pelo app |
 
 **Proibido:** `-i`/`--ignore-errors` — a doc diz que o download é considerado bem-sucedido *mesmo
 se o pós-processamento falhar*, o que faria o AT-002 anunciar sucesso sem MP3 em disco.
+
+#### Template de progresso — sintaxe obrigatória
+
+Verificado empiricamente (yt-dlp `2026.07.04`, 2026-07-20): `%(campo)j` emite **`NA` literal**
+quando o campo está ausente, e `NA` é JSON inválido — `JSON.parse` lança. Todo campo opcional
+**precisa** de valor default:
+
+```text
+download:{"status":"%(progress.status)s","done":%(progress.downloaded_bytes|0)j,
+          "total":%(progress.total_bytes|0)j,"est":%(progress.total_bytes_estimate|0)j,
+          "speed":%(progress.speed|0)j,"eta":%(progress.eta|0)j}
+```
+
+**Ler `total_bytes` e `total_bytes_estimate` juntos, não escolher um.** Na medição real, o
+primeiro veio preenchido e o segundo veio `NA` — o inverso do que se assume para DASH. Regra:
+usar o primeiro não-zero; se ambos forem `0`, cair em `fragment_index`/`fragment_count`.
 
 ### Seletores
 
@@ -255,14 +271,40 @@ Sem telemetria remota — o app é local e não manda nada para lugar nenhum.
 
 ---
 
+## Validação empírica (2026-07-20, yt-dlp `2026.07.04`, Windows, IP residencial)
+
+Executada **antes** do BUILD, com o binário standalone baixado da release oficial e hash
+conferido contra o `SHA2-256SUMS`.
+
+| Verificação | Resultado |
+|-------------|-----------|
+| **A-005 — detecção de bot** | ✅ **Validada.** 5 sondas `-J` consecutivas (incluindo Vevo), todas `availability=public`, 2,7–3,3 s cada. Zero bloqueio, zero rate limit |
+| **Download real ponta a ponta** | ✅ 629 KB em ~3 s; arquivo íntegro em disco |
+| **`--print after_move:filepath`** | ✅ Devolveu o caminho absoluto final, como projetado |
+| **Seletor H.264 do DESIGN** | ✅ Resolveu para `299+258` — 1080p `avc1` + AAC, exatamente o pretendido |
+| **`--progress-template`** | ⚠️ Funciona, mas **`%(campo)j` emite `NA`**, não `null` — design corrigido (ver acima) |
+| **Runtime JS (aviso novo)** | ⚠️ yt-dlp avisa que extração sem runtime JS está **deprecada**; hoje **não há perda** — 29 formatos idênticos com e sem Node, H.264 1080p presente nos dois. Risco **futuro**, não atual |
+
+### Risco novo detectado — runtime JavaScript
+
+O yt-dlp `2026.07.04` emite: *"YouTube extraction without a JS runtime has been deprecated, and
+some formats may be missing"*. Medido nesta data, **nada falta** — a lista de formatos é idêntica
+com e sem runtime, porque o extrator usa um client que dispensa JS.
+
+Mas "deprecated" é aviso de prazo. Se o YouTube fechar esse caminho, o app precisará de uma
+**quarta dependência** (Deno ou Node) no bootstrap, com impacto em SC-4 e no tamanho do cache.
+**Não implementar agora** (YAGNI — não há perda hoje), mas o bootstrap deve ser desenhado para
+acomodar um binário a mais sem redesenho, e o AT-004 deve detectar ausência de formatos altos.
+
 ## Riscos herdados que este design NÃO resolve
 
-- **A-005 (não validada):** o design assume que rodar do IP residencial evita a detecção de bot
-  na maioria dos usos. Se AT-008 for frequente, nenhuma escolha aqui salva o produto — a decisão
-  volta a ser de produto, não de arquitetura.
 - **A-007 (não validada):** se o `yt-dlp.exe` da release cair em `is_non_updateable()`, o SC-7
   passa a exigir que o app implemente a atualização inteira, não só o bootstrap. Verificar
   empiricamente no BUILD.
+- **A-005 residual:** a validação acima cobre **sondas e um download pequeno** de um IP
+  residencial. Uso intenso e sustentado (muitos downloads seguidos) não foi testado, e o wiki
+  documenta limite de ~300 vídeos/h para sessão guest. Para o padrão de uso previsto — uma pessoa
+  baixando manualmente — a margem é larga.
 
 ---
 
