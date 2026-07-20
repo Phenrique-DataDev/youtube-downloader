@@ -55,12 +55,20 @@ graph TD
         a_validator["validator"]
     end
 
-    %% Agentes de domínio: nenhum (surgem via /audit-agents)
+    subgraph DOM["Agentes de domínio (curadoria)"]
+        a_build_release_specialist["build-release-specialist"]
+        a_media_pipeline_specialist["media-pipeline-specialist"]
+        a_ytdlp_simulator["ytdlp-simulator"]
+    end
 
     lead --> CMD
     lead --> CORE
+    lead --> DOM
 
     %% Relações connects_to (peer)
+    a_build_release_specialist --> a_git_workflow
+    a_build_release_specialist --> a_media_pipeline_specialist
+    a_build_release_specialist --> a_validator
     a_code_reviewer --> a_security_reviewer
     a_code_reviewer --> a_test_writer
     a_debugger --> a_explorer
@@ -75,10 +83,15 @@ graph TD
     a_external_observer --> a_security_reviewer
     a_external_observer --> a_validator
     a_git_workflow --> a_code_reviewer
+    a_media_pipeline_specialist --> a_code_reviewer
+    a_media_pipeline_specialist --> a_debugger
+    a_media_pipeline_specialist --> a_ytdlp_simulator
     a_security_reviewer --> a_code_reviewer
     a_test_writer --> a_validator
     a_tracker --> a_external_observer
     a_tracker --> a_security_reviewer
     a_tracker --> a_validator
     a_validator --> a_test_writer
+    a_ytdlp_simulator --> a_media_pipeline_specialist
+    a_ytdlp_simulator --> a_validator
 ```

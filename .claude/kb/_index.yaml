@@ -1,3 +1,7 @@
 # .claude/kb/_index.yaml — gerado por /sync-context, não editar à mão
 generated_by: sync-context
-domains: {}
+domains:
+  media:
+    layer: tools
+    entries: 4
+    unverified: 0

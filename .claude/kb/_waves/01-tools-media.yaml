@@ -1,0 +1,27 @@
+wave: 01-tools-media
+target_layer: tools
+domain: media
+status: done
+subagent: general-purpose   # explorer é read-only e não grava entradas
+libs:
+  - name: yt-dlp
+    versionable: true
+  - name: ffmpeg
+    versionable: true
+entries_expected:
+  - id: selecao-de-formato
+    content_type: pattern
+  - id: saida-programatica
+    content_type: reference
+  - id: taxonomia-de-erros
+    content_type: reference
+  - id: autoatualizacao-do-binario
+    content_type: reference
+skills_needed:
+  - name: media-format-selection
+    capability: escolher e validar seletores de formato do yt-dlp sem baixar mídia
+notes: |
+  Núcleo do produto. Aplica docs-first (context7) — ambas as libs são versionáveis e mudam
+  com frequência. Foco no que o app realmente usa: muxing vídeo+áudio, extração de áudio,
+  canais estáveis de saída (-J/--print/--progress-template) e classificação de falha.
+  NÃO documentar contorno de detecção de bot — fora de escopo por decisão do DEFINE.

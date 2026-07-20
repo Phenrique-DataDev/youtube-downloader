@@ -1,0 +1,22 @@
+wave: 02-tools-node-packaging
+target_layer: tools
+domain: node-packaging
+status: pending
+subagent: explorer
+libs:
+  - name: Node.js
+    versionable: true
+  - name: Bun
+    versionable: true
+entries_expected:
+  - id: single-executable-application
+    content_type: concept
+  - id: comparativo-sea-vs-bun
+    content_type: reference
+skills_needed:
+  - name: binary-size-budget
+    capability: medir e orçar o tamanho de um executável autocontido
+notes: |
+  Decide a premissa A-002 do DEFINE (executável ≤ 120 MB). Documentar o MECANISMO do SEA
+  (cópia do binário Node + blob embutido) e o piso de tamanho que ele impõe, não só o
+  passo-a-passo. Aplica docs-first (context7).

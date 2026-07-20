@@ -1,0 +1,22 @@
+wave: 03-tools-github-actions
+target_layer: tools
+domain: github-actions
+status: pending
+subagent: explorer
+libs:
+  - name: GitHub Actions
+    versionable: true
+  - name: GitHub Pages
+    versionable: true
+entries_expected:
+  - id: workflow-de-release
+    content_type: pattern
+  - id: publicacao-no-pages
+    content_type: pattern
+skills_needed:
+  - name: release-workflow
+    capability: publicar artefato versionado em GitHub Releases pelo Actions
+notes: |
+  Sustenta o custo zero do projeto (runners gratuitos em repo público). Cobrir: build do
+  .exe em runner Windows, anexar artefato + SHA256 ao Release, deploy da landing no Pages,
+  e pinagem de versão das actions para build reprodutível. Aplica docs-first (context7).

@@ -1,6 +1,12 @@
 {
   "Nodes": [
     {
+      "Id": "build-release-specialist",
+      "Type": "Agent",
+      "Role": "vcs",
+      "Description": "Empacotar o app Node/TypeScript num executável Windows único, publicar via GitHub Releases pelo Actions e manter a landing no GitHub Pages. Acione ao mexer em build, tamanho do binário, workflow de release ou no bootstrap de dependências do 1º uso."
+    },
+    {
       "Id": "code-reviewer",
       "Type": "Agent",
       "Role": "review",
@@ -43,6 +49,12 @@
       "Description": "Expert em higiene de repositório e fluxo Git/PR — Conventional Commits, commits atômicos/bisect-friendly, rebase × merge (regra de ouro do histórico compartilhado), .gitignore preciso, PRs pequenos e revisáveis. Conhece Git-Worktree (isolar branches/sessões paralelas sem colidir na working tree) e aplica isso a outras áreas, como coordenação de sessões concorrentes (/peers). Use ao preparar commits/PRs, revisar histórico, organizar o repo ou paralelizar trabalho. Roda git/gh."
     },
     {
+      "Id": "media-pipeline-specialist",
+      "Type": "Agent",
+      "Role": "review",
+      "Description": "Implementar ou revisar a camada que fala com yt-dlp/ffmpeg — seleção de formato, muxing vídeo+áudio, extração de áudio, parsing de progresso e taxonomia de erros do extractor. Acione ao mexer no núcleo de download do youtube-downloader."
+    },
+    {
       "Id": "security-reviewer",
       "Type": "Agent",
       "Role": "security",
@@ -67,10 +79,82 @@
       "Description": "Verifica se o resultado entregue cumpre a spec e os Acceptance Tests do DEFINE — executa e observa o comportamento real, checa exit code (não só stdout), cobre o caso negativo e a fronteira, e isola o veredito em ambiente reprodutível (worktree limpo, deps do zero). Distingue cumpre/parcial/não-cumpre com evidência. Não conserta — só verifica. Read-only."
     },
     {
+      "Id": "ytdlp-simulator",
+      "Type": "Agent",
+      "Role": "simulation",
+      "Description": "Simular uma mudança na seleção de formato do yt-dlp antes de aplicá-la — mostra o que SERIA baixado (formato, codec, tamanho, se precisa muxing) sem baixar byte nenhum. Acione a partir do /simulate ao mexer em seletor de formato, resolução ou pós-processamento."
+    },
+    {
+      "Id": "github-actions",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "media",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "node-packaging",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
       "Id": "max",
       "Type": "Hub",
       "Role": "orchestrator-hub",
       "Description": "Modo MAX — hub orquestrador-mestre do grafo de agentes (H7)"
+    },
+    {
+      "Id": "autoatualizacao-do-binario",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "saida-programatica",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "selecao-de-formato",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "pattern",
+      "Status": "active"
+    },
+    {
+      "Id": "taxonomia-de-erros",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "binary-size-budget",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
     },
     {
       "Id": "decision-preview",
@@ -97,12 +181,28 @@
       "Status": "referenced"
     },
     {
+      "Id": "media-format-selection",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
+    },
+    {
       "Id": "page-to-markdown",
       "Type": "Skill",
       "Role": "",
       "Description": "",
       "Scope": "project",
       "Status": "valid"
+    },
+    {
+      "Id": "release-workflow",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
     },
     {
       "Id": "security-guidance",
@@ -130,6 +230,36 @@
     }
   ],
   "Edges": [
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "git-workflow",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "media-pipeline-specialist",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
     {
       "From": "code-reviewer",
       "To": "security-reviewer",
@@ -226,6 +356,16 @@
       "Type": "CONNECTS_TO"
     },
     {
+      "From": "github-actions",
+      "To": "release-workflow",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "max",
+      "To": "build-release-specialist",
+      "Type": "ORCHESTRATES"
+    },
+    {
       "From": "max",
       "To": "code-reviewer",
       "Type": "ORCHESTRATES"
@@ -262,6 +402,11 @@
     },
     {
       "From": "max",
+      "To": "media-pipeline-specialist",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
       "To": "security-reviewer",
       "Type": "ORCHESTRATES"
     },
@@ -281,6 +426,51 @@
       "Type": "ORCHESTRATES"
     },
     {
+      "From": "max",
+      "To": "ytdlp-simulator",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "media",
+      "To": "media-format-selection",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "debugger",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "ytdlp-simulator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "node-packaging",
+      "To": "binary-size-budget",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "selecao-de-formato",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
       "From": "security-reviewer",
       "To": "code-reviewer",
       "Type": "CONNECTS_TO"
@@ -289,6 +479,41 @@
       "From": "security-reviewer",
       "To": "security-guidance",
       "Type": "USES_SKILL"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "autoatualizacao-do-binario",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "selecao-de-formato",
+      "Type": "RELATED_TO"
     },
     {
       "From": "test-writer",
@@ -313,6 +538,16 @@
     {
       "From": "validator",
       "To": "test-writer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "ytdlp-simulator",
+      "To": "media-pipeline-specialist",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "ytdlp-simulator",
+      "To": "validator",
       "Type": "CONNECTS_TO"
     }
   ]
