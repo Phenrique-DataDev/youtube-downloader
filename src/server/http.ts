@@ -243,6 +243,12 @@ async function servirArquivo(res: ServerResponse, raiz: string, nome: string): P
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:",
+    // O token de sessao viaja na querystring (`/?t=…`). Sem isto, qualquer
+    // recurso externo futuro — uma thumbnail do ytimg, que a CSP acima ja
+    // permitiria — levaria a URL INTEIRA no `Referer`, entregando o token a
+    // terceiro. Hoje o unico link externo tem `rel=noreferrer`; o header nao
+    // depende de ninguem lembrar disso no proximo commit.
+    'Referrer-Policy': 'no-referrer',
   });
   res.end(conteudo);
 }
