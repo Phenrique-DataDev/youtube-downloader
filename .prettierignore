@@ -1,0 +1,14 @@
+# O scaffold vem do template (nsp). Reformatar estes arquivos os faria divergir
+# para sempre e todo `nsp -Update` os marcaria como conflito, congelando as
+# rules/commands na versao do dia. Nao formate o que voce nao mantem.
+.claude/
+docs/
+inbox/
+AGENTS.md
+CLAUDE.md
+
+node_modules/
+package-lock.json
+dist/
+build/
+.impeccable/

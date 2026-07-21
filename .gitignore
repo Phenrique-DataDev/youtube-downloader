@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+*.log
+
+# Binarios de dependencia nunca sao versionados — o bootstrap os baixa e
+# verifica hash. Ver DESIGN, secao Security.
+*.exe
+!scripts/**/*.exe
+.cache/
+.claude/.cache/
+
+# Artefatos de teste
+tests/.tmp/
+coverage/
