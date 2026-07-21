@@ -117,6 +117,60 @@ describe('AT-002 — audio sai em MP3 de verdade', () => {
   });
 });
 
+describe('escolha de formato de audio (SHOULD do DEFINE)', () => {
+  it('sem escolha explicita, continua entregando mp3', () => {
+    const args = montarArgsDownload({ ...BASE, formato: 'audio' });
+    expect(args[args.indexOf('--audio-format') + 1]).toBe('mp3');
+  });
+
+  it('m4a preserva a trilha da origem, sem transcodificar', () => {
+    const args = montarArgsDownload({ ...BASE, formato: 'audio', codecAudio: 'm4a' });
+    expect(args).toContain('-x');
+    expect(args[args.indexOf('--audio-format') + 1]).toBe('m4a');
+    // `--audio-quality` e parametro de ENCODER. Presente aqui, sugeriria uma
+    // escala de qualidade que este ramo nao tem — a trilha e copiada como veio.
+    expect(args).not.toContain('--audio-quality');
+  });
+
+  /**
+   * Regressao com custo medido: sem este `-f`, o `-x` escolhe a melhor trilha
+   * (opus no YouTube) e o ffmpeg recodifica para AAC — 8,7 MB a 338 kbps saindo
+   * de uma origem de 3,3 MB, pior que o proprio MP3. Selecionar a trilha que ja
+   * e AAC e o que faz o yt-dlp copiar em vez de converter.
+   */
+  it('m4a seleciona a trilha que JA e AAC — senao o -x puxa opus e transcodifica', () => {
+    const args = montarArgsDownload({ ...BASE, formato: 'audio', codecAudio: 'm4a' });
+    expect(args[args.indexOf('-f') + 1]).toBe('ba[ext=m4a]/ba');
+  });
+
+  it('mp3 pede o melhor VBR do LAME', () => {
+    const args = montarArgsDownload({ ...BASE, formato: 'audio', codecAudio: 'mp3' });
+    expect(args[args.indexOf('--audio-quality') + 1]).toBe('0');
+  });
+
+  /**
+   * O ramo de audio nao le `alturaPreferida`. O teste trava isso para que a UI
+   * nunca volte a oferecer resolucao em audio achando que ela chega a algum
+   * lugar — foi exatamente a confusao que originou esta mudanca.
+   */
+  it('altura pedida junto com audio nao vira argumento nenhum', () => {
+    const args = montarArgsDownload({
+      ...BASE,
+      formato: 'audio',
+      codecAudio: 'mp3',
+      alturaPreferida: 720,
+    });
+    expect(args).not.toContain('-S');
+    expect(args.join(' ')).not.toContain('720');
+  });
+
+  it('codecAudio nao contamina o ramo de video', () => {
+    const args = montarArgsDownload({ ...BASE, formato: 'video', codecAudio: 'm4a' });
+    expect(args).not.toContain('-x');
+    expect(args).not.toContain('--audio-format');
+  });
+});
+
 describe('progresso e caminho final', () => {
   const args = montarArgsDownload({ ...BASE, formato: 'audio' });
 

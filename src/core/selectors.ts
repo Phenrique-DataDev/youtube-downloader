@@ -38,11 +38,25 @@ const TEMPLATE_POSTPROCESS =
 
 export type Formato = 'video' | 'audio';
 
+/**
+ * O que sai quando o usuario pede audio.
+ *
+ * NAO e uma escala de qualidade. Medido em 2026-07-21 contra o catalogo real do
+ * YouTube: a melhor trilha so-audio entrega ~130 kbps (itag 140, AAC) ou
+ * ~129 kbps (itag 251, opus). Nao existe fidelidade acima disso para extrair,
+ * entao oferecer "320 kbps" seria placebo — arquivo tres vezes maior, mesma
+ * fonte, e ainda com perda de geracao. A escolha honesta e outra: transcodificar
+ * para o formato que toca em qualquer lugar, ou preservar a trilha da origem.
+ */
+export type CodecAudio = 'mp3' | 'm4a';
+
 export interface OpcoesDownload {
   urlCanonica: string;
   formato: Formato;
-  /** Altura preferida (ex.: 720). Ausente = melhor disponivel. */
+  /** Altura preferida (ex.: 720). Ausente = melhor disponivel. So vale para video. */
   alturaPreferida?: number;
+  /** Codec de saida do audio. Ausente = mp3. Ignorado quando formato e video. */
+  codecAudio?: CodecAudio;
   /** Diretorio de saida ja resolvido e confinado pelo chamador. */
   destino: string;
   /** Diretorio que contem ffmpeg.exe e ffprobe.exe. */
@@ -75,7 +89,15 @@ export function montarArgsProbe(urlCanonica: string, ffmpegDir: string): string[
 }
 
 export function montarArgsDownload(opcoes: OpcoesDownload): string[] {
-  const { urlCanonica, formato, alturaPreferida, destino, ffmpegDir, arquivoDeCaminho } = opcoes;
+  const {
+    urlCanonica,
+    formato,
+    alturaPreferida,
+    codecAudio,
+    destino,
+    ffmpegDir,
+    arquivoDeCaminho,
+  } = opcoes;
 
   const args = [
     ...argsComuns(ffmpegDir),
@@ -103,8 +125,26 @@ export function montarArgsDownload(opcoes: OpcoesDownload): string[] {
   ];
 
   if (formato === 'audio') {
-    // `--audio-format best` (default) NAO converte — nao entrega .mp3.
-    args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
+    if (codecAudio === 'm4a') {
+      // O `-f` aqui NAO e opcional, e a diferenca entre copiar e transcodificar.
+      //
+      // Medido em 2026-07-21 (yt-dlp 2026.07.04): com `-x --audio-format m4a`
+      // sozinho, o `-x` puxa a melhor trilha — que no YouTube e opus — e o
+      // ffmpeg recodifica opus->AAC. O resultado foi 8,7 MB a 338 kbps a partir
+      // de uma origem de 3,3 MB: arquivo maior que o MP3, com perda de geracao,
+      // exatamente o oposto do que esta opcao promete.
+      //
+      // Selecionando a trilha que JA e AAC, o yt-dlp reporta "Not converting
+      // audio; file is already in target format" e so corrige o container:
+      // 3,3 MB a 128 kbps, identico a origem. O `/ba` final cobre o video raro
+      // que nao ofereca m4a — nesse caso ha conversao, e nao ha o que evitar.
+      args.push('-f', 'ba[ext=m4a]/ba', '-x', '--audio-format', 'm4a');
+    } else {
+      // `--audio-format best` (default) NAO converte — nao entrega .mp3.
+      // `--audio-quality 0` = melhor VBR do LAME; e teto de transcodificacao,
+      // nao de fidelidade (a origem continua sendo ~130 kbps).
+      args.push('-x', '--audio-format', 'mp3', '--audio-quality', '0');
+    }
   } else {
     args.push('-f', SELETOR_VIDEO_H264, '--merge-output-format', 'mp4');
     // `--merge-output-format` e ignorado quando nao ha merge; o remux garante

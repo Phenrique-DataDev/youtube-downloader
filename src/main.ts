@@ -70,6 +70,7 @@ async function principal(): Promise<void> {
           url?: unknown;
           formato?: unknown;
           alturaPreferida?: unknown;
+          codecAudio?: unknown;
         };
 
         const validacao = validarUrlYoutube(String(pedido.url ?? ''));
@@ -96,6 +97,9 @@ async function principal(): Promise<void> {
           typeof pedido.alturaPreferida === 'number' && pedido.alturaPreferida > 0
             ? pedido.alturaPreferida
             : undefined;
+        // Allowlist, nao cast: o valor vira argumento de linha de comando, e
+        // qualquer string que passasse daqui iria parar no `--audio-format`.
+        const codecAudio = pedido.codecAudio === 'm4a' ? 'm4a' : 'mp3';
 
         // Confinamento do destino: o template `-o` e nosso, mas a raiz passa
         // por checagem explicita mesmo assim.
@@ -114,6 +118,7 @@ async function principal(): Promise<void> {
             urlCanonica: validacao.urlCanonica,
             formato,
             ...(altura !== undefined ? { alturaPreferida: altura } : {}),
+            codecAudio,
             destino,
             ffmpegDir: caminhos.ffmpegDir,
           },

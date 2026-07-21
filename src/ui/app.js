@@ -14,6 +14,10 @@ const formulario = el('formulario');
 const campoUrl = el('url');
 const seletorResolucao = el('resolucao');
 const dicaResolucao = el('dica-resolucao');
+const campoResolucao = el('campo-resolucao');
+const campoCodecAudio = el('campo-codec-audio');
+const seletorCodecAudio = el('codec-audio');
+const rotuloCodecAudio = el('rotulo-codec-audio');
 const botao = el('botao');
 const painel = el('painel');
 const info = el('info');
@@ -81,6 +85,43 @@ function aplicarEstadoBootstrap(estado) {
       : 'Preparando…';
   atualizarBotao();
 }
+
+/* ----------------------------------------------------------------- formato */
+
+const radiosFormato = formulario.querySelectorAll('input[name="formato"]');
+
+function formatoEscolhido() {
+  return formulario.querySelector('input[name="formato"]:checked').value;
+}
+
+/**
+ * O painel avancado mostra so o que vale para o formato escolhido. Resolucao
+ * nao existe em audio — o `montarArgsDownload` sequer le a altura nesse ramo —
+ * e formato de audio nao existe em video.
+ */
+function ajustarAvancado() {
+  const audio = formatoEscolhido() === 'audio';
+  campoResolucao.hidden = audio;
+  campoCodecAudio.hidden = !audio;
+}
+
+/**
+ * A pilula anuncia a extensao que vai sair. Deixa-la fixa em "MP3" faria a
+ * escolha de M4A ficar invisivel fora do painel recolhido — o mesmo tipo de
+ * promessa desalinhada que a resolucao fazia em audio.
+ */
+function ajustarRotuloCodec() {
+  rotuloCodecAudio.textContent = seletorCodecAudio.value.toUpperCase();
+}
+
+for (const radio of radiosFormato) {
+  radio.addEventListener('change', ajustarAvancado);
+}
+
+seletorCodecAudio.addEventListener('change', ajustarRotuloCodec);
+
+ajustarAvancado();
+ajustarRotuloCodec();
 
 /* -------------------------------------------------------------------- sonda */
 
@@ -194,7 +235,7 @@ formulario.addEventListener('submit', async (evento) => {
   if (baixando || !prontoParaBaixar) return;
 
   const url = campoUrl.value.trim();
-  const formato = formulario.querySelector('input[name="formato"]:checked').value;
+  const formato = formatoEscolhido();
   const altura = seletorResolucao.value;
 
   baixando = true;
@@ -205,10 +246,13 @@ formulario.addEventListener('submit', async (evento) => {
   definirProgresso(null, 'Iniciando…', '');
 
   try {
+    // Cada opcao so viaja no formato a que pertence: mandar altura num pedido
+    // de audio faria o corpo prometer algo que o servidor ignora.
     await baixarComSse({
       url,
       formato,
-      ...(altura ? { alturaPreferida: Number(altura) } : {}),
+      ...(formato === 'video' && altura ? { alturaPreferida: Number(altura) } : {}),
+      ...(formato === 'audio' ? { codecAudio: seletorCodecAudio.value } : {}),
     });
   } catch (erro) {
     mostrarErro({ mensagem: 'O download foi interrompido.', detalhe: String(erro) });

@@ -41,19 +41,36 @@
           </label>
           <label class="opcao">
             <input type="radio" name="formato" value="audio" />
-            <span>Áudio <small>MP3</small></span>
+            <span>Áudio <small id="rotulo-codec-audio">MP3</small></span>
           </label>
         </fieldset>
 
         <details id="avancado" class="avancado">
           <summary>Opções avançadas</summary>
-          <label class="campo">
+
+          <!-- Um campo por formato, nunca os dois: o ramo de audio do
+               montarArgsDownload ignora a altura por completo, entao deixar
+               "Resolucao" visivel com Audio marcado oferece uma escolha que o
+               codigo joga fora. O JS alterna pelo radio de formato. -->
+          <label class="campo" id="campo-resolucao">
             <span class="rotulo">Resolução</span>
             <select id="resolucao" disabled>
               <option value="">Melhor disponível</option>
             </select>
             <small class="dica" id="dica-resolucao">
               Cole um link primeiro — as opções vêm do vídeo.
+            </small>
+          </label>
+
+          <label class="campo" id="campo-codec-audio" hidden>
+            <span class="rotulo">Formato do áudio</span>
+            <select id="codec-audio">
+              <option value="mp3" selected>MP3 — toca em qualquer lugar</option>
+              <option value="m4a">M4A — trilha original, sem reconversão</option>
+            </select>
+            <small class="dica" id="dica-codec-audio">
+              O YouTube entrega ~130 kbps. O MP3 reconverte para compatibilidade máxima; o M4A copia
+              a trilha como veio, sem perda extra e num arquivo menor.
             </small>
           </label>
         </details>

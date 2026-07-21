@@ -6,7 +6,7 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { montarArgsDownload, type Formato } from '../core/selectors.ts';
+import { montarArgsDownload, type CodecAudio, type Formato } from '../core/selectors.ts';
 import { parsearLinhaProgresso, type EventoProgresso } from '../core/progress.ts';
 import { classificarStderr, type ErroClassificado } from '../core/errors.ts';
 import { executarYtdlp } from './runner.ts';
@@ -15,6 +15,7 @@ export interface PedidoDownload {
   urlCanonica: string;
   formato: Formato;
   alturaPreferida?: number;
+  codecAudio?: CodecAudio;
   destino: string;
   ffmpegDir: string;
 }
@@ -42,6 +43,7 @@ export async function baixar(
       urlCanonica: pedido.urlCanonica,
       formato: pedido.formato,
       ...(pedido.alturaPreferida !== undefined ? { alturaPreferida: pedido.alturaPreferida } : {}),
+      ...(pedido.codecAudio !== undefined ? { codecAudio: pedido.codecAudio } : {}),
       destino: pedido.destino,
       ffmpegDir: pedido.ffmpegDir,
       arquivoDeCaminho,
