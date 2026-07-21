@@ -50,7 +50,7 @@ describe('AT-005 — nenhum subprocesso para URL invalida', () => {
     'javascript:alert(1)',
     'https://vimeo.com/123',
     'https://www.youtube.com/@canal',
-    'https://youtube.com.evil.example/watch?v=dQw4w9WgXcQ',
+    'https://youtube.com.evil.example/watch?v=aBc123_-XyZ',
   ];
 
   it.each(invalidas)('%j nao chega a spawnar nada', async (entrada) => {
@@ -90,9 +90,9 @@ describe('Security — spawn nunca usa shell', () => {
 
 describe('AT-012 — a sonda simula e precede o download', () => {
   it('a sonda nunca passa --no-simulate; o download sempre passa', () => {
-    const probe = montarArgsProbe('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'C:/ff');
+    const probe = montarArgsProbe('https://www.youtube.com/watch?v=aBc123_-XyZ', 'C:/ff');
     const download = montarArgsDownload({
-      urlCanonica: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      urlCanonica: 'https://www.youtube.com/watch?v=aBc123_-XyZ',
       formato: 'audio',
       destino: 'C:/out',
       arquivoDeCaminho: 'C:/temp/d.txt',
@@ -105,7 +105,7 @@ describe('AT-012 — a sonda simula e precede o download', () => {
   });
 
   it('a ordem real e sonda -> download', async () => {
-    const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const url = 'https://www.youtube.com/watch?v=aBc123_-XyZ';
 
     await executarYtdlp('yt-dlp.exe', montarArgsProbe(url, 'C:/ff'));
     await executarYtdlp(

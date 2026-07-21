@@ -35,7 +35,7 @@ ERROR: [youtube] ZoJ7iWEUSpI: Video unavailable`;
  */
 export const SEM_REDE = `WARNING: [youtube] SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection: [WinError 10061] Nenhuma conexao pode ser feita porque a maquina de destino as recusou ativamente. Retrying (1/3)...
 WARNING: [youtube] SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection: [WinError 10061] Nenhuma conexao pode ser feita porque a maquina de destino as recusou ativamente. Retrying (3/3)...
-ERROR: [youtube] dQw4w9WgXcQ: Unable to download webpage: SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection: [WinError 10061] Nenhuma conexao pode ser feita porque a maquina de destino as recusou ativamente (caused by TransportError("SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection")). Giving up after 3 retries`;
+ERROR: [youtube] aBc123_-XyZ: Unable to download webpage: SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection: [WinError 10061] Nenhuma conexao pode ser feita porque a maquina de destino as recusou ativamente (caused by TransportError("SocksHTTPSConnection(host='www.youtube.com', port=443): Failed to establish a new connection")). Giving up after 3 retries`;
 
 /**
  * Rate limit / anti-bot. NAO capturada em execucao real — a validacao empirica
@@ -45,10 +45,10 @@ ERROR: [youtube] dQw4w9WgXcQ: Unable to download webpage: SocksHTTPSConnection(h
  * Texto vindo da documentacao/issues do yt-dlp. Marcada como NAO-VERIFICADA de
  * proposito: se um usuario reportar o bloqueio, a mensagem real substitui esta.
  */
-export const RATE_LIMIT_NAO_VERIFICADA = `ERROR: [youtube] dQw4w9WgXcQ: Sign in to confirm you're not a bot. Use --cookies-from-browser or --cookies for the authentication.`;
+export const RATE_LIMIT_NAO_VERIFICADA = `ERROR: [youtube] aBc123_-XyZ: Sign in to confirm you're not a bot. Use --cookies-from-browser or --cookies for the authentication.`;
 
 /** Idem — texto que engana: contem "isn't available" mas e rate limit. */
-export const RATE_LIMIT_ENGANOSA_NAO_VERIFICADA = `ERROR: [youtube] dQw4w9WgXcQ: This content isn't available, try again later.`;
+export const RATE_LIMIT_ENGANOSA_NAO_VERIFICADA = `ERROR: [youtube] aBc123_-XyZ: This content isn't available, try again later.`;
 
 /** Falha que nao casa com padrao nenhum — alimenta o AT-013. */
-export const DESCONHECIDA = `ERROR: [youtube] dQw4w9WgXcQ: Um erro completamente novo que ninguem previu (codigo 42)`;
+export const DESCONHECIDA = `ERROR: [youtube] aBc123_-XyZ: Um erro completamente novo que ninguem previu (codigo 42)`;

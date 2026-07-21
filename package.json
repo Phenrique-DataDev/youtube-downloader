@@ -2,6 +2,7 @@
   "name": "youtube-downloader",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "App local com Web UI para baixar video ou audio do YouTube pela conexao do proprio usuario",
   "type": "module",
   "engines": {

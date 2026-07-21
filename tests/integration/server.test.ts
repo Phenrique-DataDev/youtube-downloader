@@ -194,7 +194,7 @@ describe('SSE', () => {
     const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/baixar`, {
       method: 'POST',
       headers: comHost({ 'x-token': servidor.token, 'content-type': 'application/json' }),
-      body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }),
+      body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=aBc123_-XyZ' }),
     });
 
     expect(r.status).toBe(200);

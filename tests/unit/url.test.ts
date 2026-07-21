@@ -3,17 +3,17 @@ import { validarUrlYoutube } from '../../src/core/url.ts';
 
 describe('AT-005 — validacao de URL antes de qualquer spawn', () => {
   const validas: Array<[string, string]> = [
-    ['https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://youtube.com/watch?v=dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://m.youtube.com/watch?v=dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://music.youtube.com/watch?v=dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://youtu.be/dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://www.youtube.com/shorts/dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://www.youtube.com/embed/dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
-    ['https://www.youtube.com/live/dQw4w9WgXcQ', 'dQw4w9WgXcQ'],
+    ['https://www.youtube.com/watch?v=aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://youtube.com/watch?v=aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://m.youtube.com/watch?v=aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://music.youtube.com/watch?v=aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://youtu.be/aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://www.youtube.com/shorts/aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://www.youtube.com/embed/aBc123_-XyZ', 'aBc123_-XyZ'],
+    ['https://www.youtube.com/live/aBc123_-XyZ', 'aBc123_-XyZ'],
     // Com sujeira de playlist e timestamp — o caso mais comum no mundo real.
-    ['https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLabc&index=2&t=42s', 'dQw4w9WgXcQ'],
-    ['  https://youtu.be/dQw4w9WgXcQ?si=xyz  ', 'dQw4w9WgXcQ'],
+    ['https://www.youtube.com/watch?v=aBc123_-XyZ&list=PLabc&index=2&t=42s', 'aBc123_-XyZ'],
+    ['  https://youtu.be/aBc123_-XyZ?si=xyz  ', 'aBc123_-XyZ'],
   ];
 
   it.each(validas)('aceita %s', (entrada, idEsperado) => {
@@ -27,7 +27,7 @@ describe('AT-005 — validacao de URL antes de qualquer spawn', () => {
   });
 
   it('canonicaliza descartando &list= (protege o AT contra playlist acidental)', () => {
-    const r = validarUrlYoutube('https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLxyz');
+    const r = validarUrlYoutube('https://www.youtube.com/watch?v=aBc123_-XyZ&list=PLxyz');
     expect(r.ok && r.urlCanonica.includes('list')).toBe(false);
   });
 
@@ -37,12 +37,12 @@ describe('AT-005 — validacao de URL antes de qualquer spawn', () => {
     ['isso nao e um link', 'nao-e-url'],
     ['javascript:alert(1)', 'nao-e-url'],
     ['file:///C:/Windows/System32', 'nao-e-url'],
-    ['ftp://youtube.com/watch?v=dQw4w9WgXcQ', 'nao-e-url'],
+    ['ftp://youtube.com/watch?v=aBc123_-XyZ', 'nao-e-url'],
     ['https://vimeo.com/123456', 'nao-e-youtube'],
-    ['https://example.com/watch?v=dQw4w9WgXcQ', 'nao-e-youtube'],
+    ['https://example.com/watch?v=aBc123_-XyZ', 'nao-e-youtube'],
     // Host que apenas CONTEM youtube.com — nao pode passar.
-    ['https://youtube.com.evil.example/watch?v=dQw4w9WgXcQ', 'nao-e-youtube'],
-    ['https://notyoutube.com/watch?v=dQw4w9WgXcQ', 'nao-e-youtube'],
+    ['https://youtube.com.evil.example/watch?v=aBc123_-XyZ', 'nao-e-youtube'],
+    ['https://notyoutube.com/watch?v=aBc123_-XyZ', 'nao-e-youtube'],
     ['https://www.youtube.com/', 'sem-video-id'],
     ['https://www.youtube.com/@algumcanal', 'sem-video-id'],
     ['https://www.youtube.com/playlist?list=PLxyz', 'sem-video-id'],

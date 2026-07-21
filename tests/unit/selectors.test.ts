@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { montarArgsProbe, montarArgsDownload } from '../../src/core/selectors.ts';
 
 const BASE = {
-  urlCanonica: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  urlCanonica: 'https://www.youtube.com/watch?v=aBc123_-XyZ',
   destino: 'C:/Users/teste/Downloads',
   ffmpegDir: 'C:/cache/ffmpeg',
   arquivoDeCaminho: 'C:/temp/destino.txt',

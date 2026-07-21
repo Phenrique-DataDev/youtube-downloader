@@ -23,8 +23,21 @@ import type { EventoProgresso } from '../../src/core/progress.ts';
 
 const caminhos = resolverCaminhos();
 
-/** Video curto, estavel e de dominio publico — "Me at the zoo", 19s. */
-const VIDEO_CURTO = 'https://www.youtube.com/watch?v=jNQXAC9IVRw';
+/**
+ * Video curto sob **Creative Commons Attribution** — "Free Waterfall 4k
+ * Videoclip", do canal Youstock, 12 s. Licenca confirmada pelo campo `license`
+ * do proprio `-J`, nao por suposicao.
+ *
+ * A escolha e deliberada e vale manter: estes testes BAIXAM o video de
+ * verdade. Parte da reclamacao de DMCA que derrubou o youtube-dl do GitHub em
+ * 2020 mirava justamente videos protegidos usados como caso de teste, e o
+ * mantenedor os removeu. Usar obra licenciada para reuso remove esse flanco.
+ *
+ * Antes daqui havia "Me at the zoo", comentado como "dominio publico" — o que e
+ * FALSO: o `-J` daquele video nao traz campo `license`, ou seja, licenca padrao
+ * do YouTube. Ao trocar, confirme a licenca; nao herde a alegacao.
+ */
+const VIDEO_CURTO = 'https://www.youtube.com/watch?v=w6uX9jamcwQ';
 
 let temDeps = false;
 let destino: string;
@@ -140,7 +153,7 @@ describe.runIf(process.env['TESTE_REDE'] === '1')('pipeline real contra o YouTub
     const v = validarUrlYoutube(VIDEO_CURTO);
     if (!v.ok) throw new Error('URL de teste invalida');
 
-    // Este video e de 2005 e nao tem 4K. Com `-f [height<=2160]` falharia;
+    // O video vai ate 1920 e nao tem 4K. Com `-f [height<=2160]` falharia;
     // com `-S res:2160` deve entregar a melhor disponivel.
     const r = await baixar(
       caminhos.ytdlp,
