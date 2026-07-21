@@ -75,7 +75,11 @@
           </label>
         </details>
 
-        <button id="botao" type="submit" class="botao">Baixar</button>
+        <!-- Comeca desabilitado porque `prontoParaBaixar` comeca false: quem
+             habilita e a primeira resposta de /api/estado. Deixa-lo habilitado
+             aqui fazia o botao mentir enquanto essa resposta nao chegava — e
+             mentir PARA SEMPRE quando ela nunca chegava (token expirado). -->
+        <button id="botao" type="submit" class="botao" disabled>Baixar</button>
       </form>
 
       <section id="painel" class="painel" hidden aria-live="polite">
