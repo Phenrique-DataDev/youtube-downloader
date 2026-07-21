@@ -144,6 +144,16 @@ body::before {
   color: var(--texto-suave);
 }
 
+/* Estado terminal: nao ha trabalho em curso, entao o spinner sai. Deixa-lo
+   girando prometeria que algo ainda vai acontecer. */
+.aviso-parado .girando {
+  display: none;
+}
+
+.aviso-parado {
+  color: var(--texto);
+}
+
 .girando {
   width: 0.75rem;
   height: 0.75rem;

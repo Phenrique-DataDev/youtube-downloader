@@ -48,20 +48,59 @@ let prontoParaBaixar = false;
  * aviso de preparo. A UI aparece antes do bootstrap terminar (SC-1), entao
  * este estado e normal na primeira execucao, nao um erro.
  */
+/** ~5 s a 500 ms por tentativa. Abaixo disto e so o servidor subindo. */
+const TENTATIVAS_ATE_DESISTIR = 10;
+
 async function acompanharBootstrap() {
+  let falhasSeguidas = 0;
+
   for (;;) {
     try {
       const estado = await chamar('/api/estado');
+      falhasSeguidas = 0;
       aplicarEstadoBootstrap(estado);
       if (estado.fase === 'pronto' || estado.fase === 'falhou') return;
-    } catch {
-      // Servidor ainda subindo ou indisponivel por um instante: tenta de novo.
+    } catch (erro) {
+      // 401 NAO e transitorio: o servidor esta vivo e recusou ESTE token.
+      // Acontece de verdade quando o navegador restaura a aba de uma execucao
+      // anterior — a porta preferida costuma ser a mesma, entao a aba velha
+      // encontra um app novo, com token novo. Repetir nao conserta: este token
+      // nunca mais vale, e insistir em silencio deixava a UI parecendo pronta.
+      if (erro instanceof ErroHttp && erro.status === 401) {
+        pararCom(
+          'Esta aba é de uma execução anterior do app. Use a aba que ele abriu agora, ou feche e execute de novo.',
+        );
+        return;
+      }
+
+      // Demais falhas (app fechado, porta morta) podem ser passageiras, entao
+      // seguimos tentando — mas sem fingir progresso indefinidamente.
+      falhasSeguidas += 1;
+      if (falhasSeguidas === TENTATIVAS_ATE_DESISTIR) {
+        pararCom('Não estou conseguindo falar com o app. Ele ainda está aberto?');
+      }
     }
     await esperar(500);
   }
 }
 
+/**
+ * Estado terminal: mensagem fixa, sem spinner e sem botao. Distinto do aviso
+ * de preparo, que anuncia trabalho em andamento — aqui nao ha o que esperar.
+ */
+function pararCom(mensagem) {
+  prontoParaBaixar = false;
+  atualizarBotao();
+  avisoPreparo.hidden = false;
+  avisoPreparo.classList.add('aviso-parado');
+  avisoPreparoTexto.textContent = mensagem;
+}
+
 function aplicarEstadoBootstrap(estado) {
+  // Uma resposta boa desfaz o aviso de "nao consigo falar com o app": a falha
+  // era passageira e o spinner volta a fazer sentido.
+  avisoPreparo.classList.remove('aviso-parado');
+
   if (estado.fase === 'pronto') {
     prontoParaBaixar = true;
     avisoPreparo.hidden = true;
@@ -406,6 +445,19 @@ function atualizarBotao() {
 
 /* ---------------------------------------------------------------- utilitarios */
 
+/**
+ * Erro de HTTP que carrega o status. Um `Error` com o status so na mensagem
+ * obrigaria quem trata a fazer parsing de texto — e o 401 precisa ser
+ * distinguido das demais falhas, nao apenas registrado.
+ */
+class ErroHttp extends Error {
+  constructor(status) {
+    super(`HTTP ${status}`);
+    this.name = 'ErroHttp';
+    this.status = status;
+  }
+}
+
 async function chamar(rota, corpo) {
   const resposta = await fetch(rota, {
     method: corpo ? 'POST' : 'GET',
@@ -414,7 +466,7 @@ async function chamar(rota, corpo) {
       : { 'x-token': TOKEN },
     ...(corpo ? { body: JSON.stringify(corpo) } : {}),
   });
-  if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+  if (!resposta.ok) throw new ErroHttp(resposta.status);
   return resposta.json();
 }
 
