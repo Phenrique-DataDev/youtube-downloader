@@ -101,15 +101,11 @@ async function principal(): Promise<void> {
         // qualquer string que passasse daqui iria parar no `--audio-format`.
         const codecAudio = pedido.codecAudio === 'm4a' ? 'm4a' : 'mp3';
 
-        // Confinamento do destino: o template `-o` e nosso, mas a raiz passa
-        // por checagem explicita mesmo assim.
+        // O destino nao vem do pedido: e sempre a raiz de downloads resolvida
+        // localmente. Nao ha o que confinar na ENTRADA — conferir `destino`
+        // contra ele mesmo seria tautologia, e tautologia que parece guarda e
+        // pior que guarda nenhuma (ver a verificacao de SAIDA abaixo).
         const destino = resolve(caminhos.downloads);
-        if (!caminhoEstaConfinado(destino, resolve(caminhos.downloads))) {
-          return {
-            ok: false,
-            erro: { mensagem: 'Destino inválido.', detalhe: '', temporario: false },
-          };
-        }
 
         const inicio = Date.now();
         const resultado = await baixar(
@@ -129,6 +125,21 @@ async function principal(): Promise<void> {
         );
 
         if (resultado.ok) {
+          // AQUI o confinamento tem conteudo: `caminhoArquivo` e reportado pelo
+          // yt-dlp — processo externo, com o titulo do video no nome. A UI
+          // exibe esse caminho, entao ele precisa mesmo ter caido dentro da
+          // raiz que pedimos, e nao em outro lugar do disco.
+          if (!caminhoEstaConfinado(resolve(resultado.caminhoArquivo), destino)) {
+            await registrar('caminho fora da raiz', resultado.caminhoArquivo);
+            return {
+              ok: false,
+              erro: {
+                mensagem: 'O arquivo foi salvo fora da pasta de downloads.',
+                detalhe: '',
+                temporario: false,
+              },
+            };
+          }
           await registrar('download ok', `${Date.now() - inicio}ms ${resultado.caminhoArquivo}`);
         } else {
           // stderr bruto vai para o log, nunca para a UI.
