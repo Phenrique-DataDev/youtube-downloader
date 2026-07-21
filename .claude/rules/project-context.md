@@ -12,7 +12,7 @@
 |-------|-------|
 | Nome do projeto | `youtube-downloader` |
 | Domínio | Web app público para baixar vídeo **ou** áudio do YouTube (formato selecionável) |
-| Repositório | `C:\Users\Pedro\Documents\Claude\youtube-downloader` (git local, branch `master`, sem remoto ainda) |
+| Repositório | [`Phenrique-DataDev/youtube-downloader`](https://github.com/Phenrique-DataDev/youtube-downloader) — **privado**. Local em `C:\Users\Pedro\Documents\Claude\youtube-downloader`, branch default `main` |
 
 ## Requisitos que moldam tudo
 
