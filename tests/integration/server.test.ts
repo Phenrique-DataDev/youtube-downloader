@@ -47,10 +47,35 @@ describe('bind e alcance', () => {
     expect(servidor.token.length).toBeGreaterThanOrEqual(40);
   });
 
-  it('serve a UI sem exigir token', async () => {
+  /**
+   * A asercao aqui era `toContain('teste')` — o fixture escrito no temp dir.
+   * Ficou falsa em `81bdab1` (ADR 0002), que inverteu a precedencia de
+   * proposito: o mapa embutido vence o disco, porque ler do disco em binario
+   * empacotado servia a pasta de codigo da maquina de BUILD. O teste seguiu
+   * cobrando o comportamento antigo e falhava desde entao.
+   *
+   * O que ele SEMPRE quis provar continua valendo: `/` responde 200 e devolve
+   * a UI, sem exigir token. Muda so a fonte legitima dessa UI.
+   */
+  it('serve a UI embutida em / sem exigir token', async () => {
     const r = await fetch(`http://127.0.0.1:${servidor.porta}/`, { headers: comHost() });
     expect(r.status).toBe(200);
-    expect(await r.text()).toContain('teste');
+    const corpo = await r.text();
+    expect(corpo).toContain('Baixar do YouTube');
+    // E NAO o fixture do disco: em producao, servi-lo seria o bug do ADR 0002.
+    expect(corpo).not.toContain('<title>teste</title>');
+  });
+
+  /**
+   * O fallback de disco nao morreu — so deixou de valer para os nomes que o
+   * build embute (`index.html`, `app.css`, `app.js`). Este arquivo nao esta no
+   * mapa, entao exercita o unico caminho em que `raizUi` ainda decide algo.
+   */
+  it('cai no disco para arquivo que o build nao embute', async () => {
+    await writeFile(join(raizUi, 'extra.txt'), 'vindo-do-disco');
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/extra.txt`, { headers: comHost() });
+    expect(r.status).toBe(200);
+    expect(await r.text()).toBe('vindo-do-disco');
   });
 });
 

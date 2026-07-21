@@ -10,7 +10,7 @@
 | **Data** | 2026-07-20 |
 | **DESIGN** | [DESIGN_DOWNLOADER_LOCAL.md](../features/DESIGN_DOWNLOADER_LOCAL.md) |
 | **Branch** | `feat/downloader-local` |
-| **Commits** | `9f326e1`, `be35685`, `3f2af8e`, `5cfb4d4`, `ead80bd` |
+| **Commits** | `9f326e1`, `be35685`, `3f2af8e`, `5cfb4d4`, `ead80bd`, `1205beb`, `81bdab1`, `4adb55c`, `eb77a61`, `0ef85d0`, `d8e7c9c`, `1596ea5`, `187c3c8` |
 
 ---
 
@@ -21,12 +21,29 @@ baixa vídeo (MP4/H.264) ou áudio (MP3) pela conexão do próprio usuário. Ver
 verdade** — dois downloads reais concluídos pela UI, com container e codec conferidos por
 `ffprobe`, não pela extensão do arquivo.
 
-**Falta para o release:** a landing do GitHub Pages (`site/`, prevista no DESIGN e nunca criada).
-
-> **Atualização 2026-07-21** — o bootstrap automático do ffmpeg foi implementado e verificado
+> **Atualização 2026-07-21 (a)** — o bootstrap automático do ffmpeg foi implementado e verificado
 > (AT-003 e SC-8 passaram de ⚠️ parcial para ✅). Ver [ADR 0001](../../../docs/adr/0001-fonte-do-ffmpeg.md);
 > as seções abaixo trazem os números. O **empacotamento** também foi fechado (SC-6, ADR 0002),
-> junto com um bug de assets que só existia depois de empacotar. Resta a **landing**.
+> junto com um bug de assets que só existia depois de empacotar.
+
+> **Atualização 2026-07-21 (b) — fechamento.** Três frentes encerraram o build:
+>
+> 1. **Landing `site/`** construída (`d8e7c9c`) — era o último item do DESIGN não construído e o
+>    bloqueio nomeado na versão anterior deste relatório. Self-contained, mesma linguagem visual
+>    da UI. Continua **fora do ar** por depender de repositório público (backlog, não build).
+> 2. **UI refinada** (`d8e7c9c`) e **escolha de formato de áudio** (`1596ea5`) — o SHOULD do DEFINE
+>    "painel avançado com escolha de resolução **e formato de áudio**" estava pela metade: o painel
+>    oferecia resolução mesmo em áudio, onde o `montarArgsDownload` a descarta. Agora o painel
+>    adapta por formato e há escolha real MP3 × M4A.
+> 3. **SC-4 e SC-5 verificados** — nunca tinham linha de evidência nesta tabela (ver abaixo).
+>
+> **Correção de um teste falso-vermelho.** `tests/integration/server.test.ts` cobrava
+> `toContain('teste')` — o fixture de disco. A asserção ficou falsa em `81bdab1` (ADR 0002), que
+> **inverteu a precedência de propósito**: o mapa embutido vence o disco. O teste seguiu cobrando o
+> comportamento antigo e falhava desde então, sem que nenhuma rodada registrada aqui o pegasse.
+> Reescrito para provar o que sempre quis provar (`/` serve a UI sem token) **mais** o fallback de
+> disco para nome não-embutido. Não era bug de produto — era o relatório afirmando verde sobre
+> vermelho.
 
 ## Arquivos criados/alterados
 
@@ -48,7 +65,10 @@ verdade** — dois downloads reais concluídos pela UI, com container e codec co
 | `src/server/http.ts` | criado | HTTP + SSE + token de sessão |
 | `src/ui/{index.html,app.css,app.js}` | criado | UI vanilla, sem framework |
 | `src/main.ts` | criado | Amarra tudo; bootstrap em paralelo à UI |
-| `tests/**` | criado | 146 unit + 18 integração local + 6 integração de rede |
+| `tests/**` | criado | 165 unit + 24 integração local + 6 integração de rede |
+| `site/{index.html,styles.css}` | criado 21/07 | Landing do Pages, self-contained, mesma linguagem visual da UI |
+| `src/ui/*` | reescrito 21/07 | Refino visual (dark-only, sem scroll) + painel avançado que adapta por formato |
+| `src/core/selectors.ts` | alterado 21/07 | `CodecAudio` (MP3 × M4A). O M4A exige `-f ba[ext=m4a]/ba`: sem ele o `-x` puxa opus e o ffmpeg **transcodifica** — medido em 8,7 MB/338 kbps a partir de origem de 3,3 MB, pior que o próprio MP3 |
 
 ## Verificação (saídas reais)
 
@@ -66,9 +86,13 @@ $ npx tsc --noEmit
 
 ### Testes
 ```
-$ npx vitest run
- Test Files  8 passed | 1 skipped (9)
-      Tests  164 passed | 6 skipped (170)
+$ npx vitest run --project unit          # 2026-07-21, apos o fechamento
+ Test Files  8 passed (8)
+      Tests  165 passed (165)
+
+$ npx vitest run --project integration
+ Test Files  2 passed | 1 skipped (3)
+      Tests  24 passed | 6 skipped (30)
 
 $ TESTE_REDE=1 npx vitest run --project integration
  Test Files  2 passed (2)
@@ -108,9 +132,19 @@ found 0 vulnerabilities
 |----|-----------|---------|
 | SC-1 arranque | ✅ | UI responde em < 1 s; bootstrap não bloqueia |
 | SC-2/3 download | ✅ | 3 338 ms (MP4) e 2 612 ms (MP3), do log real |
-| SC-6 tamanho | ✅ | **94,0 MB** (teto 120 MB), Bun `--compile`. Node SEA medido em 88,2 MB e descartado por custo de build — ADR 0002 |
+| SC-4 zero deps manuais | ✅ | O `.exe` do Bun `--compile` embute runtime **e** UI — nada de Node instalado na máquina. As duas dependências externas chegam sozinhas na 1ª execução: **yt-dlp** de `yt-dlp/releases/latest` (`src/bootstrap/deps.ts:59`) e **ffmpeg** pinado por tag + SHA256. Cache frio medido em **2,6 s** (AT-003), com `ffmpeg -version`/`ffprobe -version` executando depois. Contagem de instalações exigidas do usuário: **0** |
+| SC-5 falhas em pt-BR | ✅ | **8/8** categorias de `errors.ts` têm mensagem pt-BR acionável (linhas 82–121) e as de URL inválida (AT-005) também (`url.ts:39–78`). **Fallback genérico obrigatório** presente como categoria `desconhecido` (`errors.ts:115`), alcançada por qualquer stderr não reconhecido. **0 stack traces**: o stderr cru nunca vai à UI — `detalheDe` corta nas 3 últimas linhas e só aparece atrás de "ver detalhes"; `tests/unit/errors.test.ts:57` trava que `ERROR:` não vaza na mensagem. 16 testes verdes |
+| SC-6 tamanho | ✅ | **94,0 MB** — 98 544 640 bytes, **remedido em 2026-07-21 17:13** após a UI nova e o formato de áudio (teto 120 MB), Bun `--compile`. Node SEA medido em 88,2 MB e descartado por custo de build — ADR 0002 |
 | SC-7 update yt-dlp | ✅ | Roda em paralelo; log: `update yt-dlp :: ok` |
 | SC-8 ffmpeg pinado | ✅ | Pinado por tag + SHA256 ancorado no código; download recusado se o hash não conferir. Vigiado diariamente pelo CI (`pin-ffmpeg.yml`) |
+
+> **Ressalva honesta no SC-5.** Ele cobre AT-005…AT-009, e **AT-008 (rate limit) segue ⚠️ não
+> verificado** — a fixture de stderr veio da documentação, não de um bloqueio real. O que está
+> provado é a **lógica**: a categoria existe, tem mensagem pt-BR, e a ordem dos padrões é testada
+> (rate-limit antes de indisponível, senão "isn't available, try again later" cairia no padrão
+> errado e diria ao usuário que o vídeo sumiu quando bastava esperar). O que **não** está provado é
+> que a string real do YouTube em 2026 case com o regex. Só se resolve sendo de fato bloqueado —
+> vai para o SHIPPED como débito nomeado, não como critério silenciosamente dado por atingido.
 
 ## Desvios do design
 
@@ -148,13 +182,24 @@ found 0 vulnerabilities
 
 ## Status final
 
-**Geral:** 🔄 IN PROGRESS
+**Geral:** ✅ COMPLETO
 
-O núcleo funciona e está verificado contra o YouTube real, mas **não é entregável ainda**: sem
-`.exe` e sem bootstrap do ffmpeg, o requisito "usuário baixa e roda" não se cumpre. Marcar ✅ aqui
-seria confundir "o código funciona na minha máquina" com "o produto está pronto".
+Os três motivos do `🔄 IN PROGRESS` anterior foram fechados e **medidos**, não presumidos: o `.exe`
+existe (94,0 MB, remedido hoje), o ffmpeg chega sozinho (2,6 s em cache frio) e a landing foi
+construída. Todos os **8 Success Criteria** têm agora linha de evidência — SC-4 e SC-5 não tinham
+nenhuma até este fechamento, o que significa que o relatório teria carimbado ✅ sobre dois critérios
+nunca conferidos.
+
+**O que ✅ aqui significa e o que não significa.** Significa: o DESIGN foi construído e verificado
+rodando de verdade. **Não** significa que o produto está publicado — três pendências seguem
+abertas no [backlog](../../../docs/backlog.md), e nenhuma é trabalho desta feature:
+
+| Pendência | Natureza |
+|-----------|----------|
+| Landing no ar | Exige repositório público (Pages no plano Free) |
+| Workflow de release + CI de lint/testes | Infraestrutura, nunca construída |
+| AT-008 sem fixture real | Só se resolve sendo bloqueado de verdade |
 
 ---
 
-**Próximo passo:** a landing em `site/` — último item do DESIGN ainda não construído. Ela só vai
-ao ar com o repositório público, o mesmo bloqueio que forçou o pin do ffmpeg no BtbN.
+**Próximo passo:** `/ship` — arquivar a feature levando as pendências acima como débito nomeado.
