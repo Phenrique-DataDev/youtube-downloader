@@ -3,6 +3,12 @@
 # A URL pinada aponta para uma tag `autobuild-*` do BtbN, que e podada com o
 # tempo. Sem este workflow, a descoberta viria de um usuario relatando que a
 # primeira execucao falha — meses depois do commit que pinou.
+#
+# As actions abaixo sao pinadas por SHA, nao por tag: `@v4` e uma tag MOVEL —
+# quem controla o repo da action pode reaponta-la a qualquer commit, e o
+# workflow rodaria codigo novo sem nenhum commit nosso. Mesma logica que ja
+# aplicamos ao pin do ffmpeg (ADR 0001). O comentario ao lado do SHA diz a
+# versao; para atualizar, resolva a tag e troque o SHA no mesmo commit.
 name: pin do ffmpeg
 
 on:
@@ -17,13 +23,18 @@ on:
       - '.github/workflows/pin-ffmpeg.yml'
   workflow_dispatch:
 
+# Minimo necessario: os dois jobs so fazem checkout e `fetch` de URL publica.
+# Sem isto, o GITHUB_TOKEN herda o default do repo/org, que pode ser read-write.
+permissions:
+  contents: read
+
 jobs:
   disponivel:
     name: a URL pinada ainda existe?
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
       - run: node --experimental-strip-types scripts/verificar-pin-ffmpeg.mjs
@@ -34,8 +45,8 @@ jobs:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
       - run: node --experimental-strip-types scripts/verificar-pin-ffmpeg.mjs --integridade
