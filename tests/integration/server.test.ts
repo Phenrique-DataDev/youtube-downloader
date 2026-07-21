@@ -214,6 +214,39 @@ describe('Security — path traversal em arquivo estatico', () => {
   });
 });
 
+/**
+ * Estes headers existiam desde o BUILD, mas nenhum teste os cobria — ou seja,
+ * apagar qualquer um deles passava no verde. Sao uma linha cada em `http.ts`:
+ * exatamente o tipo de defesa que some num refactor distraido e so reaparece
+ * numa auditoria.
+ */
+describe('Security — headers de resposta', () => {
+  it('a UI vem com os headers de contencao', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/`, { headers: comHost() });
+
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(r.headers.get('x-frame-options')).toBe('DENY');
+    expect(r.headers.get('content-security-policy')).toContain("default-src 'self'");
+  });
+
+  /**
+   * O token de sessao esta na querystring da URL que o app abre. Sem
+   * `no-referrer`, um recurso externo — que a CSP `img-src https:` ja
+   * permitiria — carregaria a URL inteira no `Referer` de um terceiro.
+   */
+  it('nao vaza o token pelo Referer', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/`, { headers: comHost() });
+    expect(r.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+
+  it('a resposta JSON tambem trava o sniffing', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/estado`, {
+      headers: comHost({ 'x-token': servidor.token }),
+    });
+    expect(r.headers.get('x-content-type-options')).toBe('nosniff');
+  });
+});
+
 describe('SSE', () => {
   it('emite eventos de progresso e um evento final', async () => {
     const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/baixar`, {
