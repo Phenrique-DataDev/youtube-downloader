@@ -46,7 +46,7 @@ export function validarUrlYoutube(entrada: string): ResultadoValidacao {
     return {
       ok: false,
       motivo: 'nao-e-url',
-      mensagem: 'Isso nao parece um link. Cole o endereco completo do video.',
+      mensagem: 'Isso não parece um link. Cole o endereço completo do vídeo.',
     };
   }
 
@@ -54,7 +54,7 @@ export function validarUrlYoutube(entrada: string): ResultadoValidacao {
     return {
       ok: false,
       motivo: 'nao-e-url',
-      mensagem: 'Isso nao parece um link. Cole o endereco completo do video.',
+      mensagem: 'Isso não parece um link. Cole o endereço completo do vídeo.',
     };
   }
 
@@ -66,7 +66,7 @@ export function validarUrlYoutube(entrada: string): ResultadoValidacao {
     return {
       ok: false,
       motivo: 'nao-e-youtube',
-      mensagem: 'Este link nao e do YouTube. Por enquanto so aceitamos videos do YouTube.',
+      mensagem: 'Este link não é do YouTube. Por enquanto só aceitamos vídeos do YouTube.',
     };
   }
 
@@ -76,8 +76,8 @@ export function validarUrlYoutube(entrada: string): ResultadoValidacao {
       ok: false,
       motivo: 'sem-video-id',
       mensagem:
-        'Nao encontrei um video neste link. Links de canal, playlist ou busca nao servem — ' +
-        'abra o video e copie o endereco dele.',
+        'Não encontrei um vídeo neste link. Links de canal, playlist ou busca não servem — ' +
+        'abra o vídeo e copie o endereço dele.',
     };
   }
 

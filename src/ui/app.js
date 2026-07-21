@@ -68,7 +68,7 @@ function aplicarEstadoBootstrap(estado) {
   if (estado.fase === 'falhou') {
     prontoParaBaixar = false;
     avisoPreparo.hidden = false;
-    avisoPreparoTexto.textContent = estado.mensagem ?? 'Nao consegui preparar as dependencias.';
+    avisoPreparoTexto.textContent = estado.mensagem ?? 'Não consegui preparar as dependências.';
     atualizarBotao();
     return;
   }
@@ -77,7 +77,7 @@ function aplicarEstadoBootstrap(estado) {
   avisoPreparo.hidden = false;
   avisoPreparoTexto.textContent =
     estado.fase === 'baixando'
-      ? `Baixando ${estado.oQue}… (so na primeira execucao)`
+      ? `Baixando ${estado.oQue}… (só na primeira execução)`
       : 'Preparando…';
   atualizarBotao();
 }
@@ -91,7 +91,7 @@ campoUrl.addEventListener('input', () => {
   limparResultado();
   const valor = campoUrl.value.trim();
   if (valor.length === 0) {
-    resetarResolucoes('Cole um link primeiro — as opcoes vem do video.');
+    resetarResolucoes('Cole um link primeiro — as opções vêm do vídeo.');
     return;
   }
   // Espera o usuario parar de digitar: sondar a cada tecla desperdicaria
@@ -105,21 +105,21 @@ async function sondar() {
 
   sondando = true;
   atualizarBotao();
-  resetarResolucoes('Consultando o video…');
+  resetarResolucoes('Consultando o vídeo…');
 
   try {
     const resposta = await chamar('/api/sondar', { url });
 
     if (!resposta.ok) {
       mostrarErro(resposta.erro);
-      resetarResolucoes('Nao consegui ler este video.');
+      resetarResolucoes('Não consegui ler este vídeo.');
       return;
     }
 
     mostrarInfo(resposta.metadados);
     preencherResolucoes(resposta.metadados.resolucoes);
   } catch (erro) {
-    mostrarErro({ mensagem: 'Nao consegui consultar o video.', detalhe: String(erro) });
+    mostrarErro({ mensagem: 'Não consegui consultar o vídeo.', detalhe: String(erro) });
   } finally {
     sondando = false;
     atualizarBotao();
@@ -157,7 +157,7 @@ function preencherResolucoes(resolucoes) {
 
   const melhor = document.createElement('option');
   melhor.value = '';
-  melhor.textContent = 'Melhor disponivel';
+  melhor.textContent = 'Melhor disponível';
   seletorResolucao.append(melhor);
 
   for (const r of resolucoes) {
@@ -170,12 +170,12 @@ function preencherResolucoes(resolucoes) {
   seletorResolucao.disabled = resolucoes.length === 0;
   dicaResolucao.textContent =
     resolucoes.length === 0
-      ? 'Este video nao oferece escolha de resolucao.'
-      : 'Se a resolucao escolhida nao existir, uso a mais proxima.';
+      ? 'Este vídeo não oferece escolha de resolução.'
+      : 'Se a resolução escolhida não existir, uso a mais próxima.';
 }
 
 function resetarResolucoes(dica) {
-  seletorResolucao.replaceChildren(novaOpcao('', 'Melhor disponivel'));
+  seletorResolucao.replaceChildren(novaOpcao('', 'Melhor disponível'));
   seletorResolucao.disabled = true;
   dicaResolucao.textContent = dica;
 }

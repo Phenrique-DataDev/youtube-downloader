@@ -53,7 +53,7 @@ async function principal(): Promise<void> {
           return {
             ok: false,
             erro: {
-              mensagem: 'Ainda estou preparando as dependencias.',
+              mensagem: 'Ainda estou preparando as dependências.',
               detalhe: '',
               temporario: true,
             },
@@ -84,7 +84,7 @@ async function principal(): Promise<void> {
           return {
             ok: false,
             erro: {
-              mensagem: 'Ainda estou preparando as dependencias.',
+              mensagem: 'Ainda estou preparando as dependências.',
               detalhe: '',
               temporario: true,
             },
@@ -103,7 +103,7 @@ async function principal(): Promise<void> {
         if (!caminhoEstaConfinado(destino, resolve(caminhos.downloads))) {
           return {
             ok: false,
-            erro: { mensagem: 'Destino invalido.', detalhe: '', temporario: false },
+            erro: { mensagem: 'Destino inválido.', detalhe: '', temporario: false },
           };
         }
 
@@ -172,8 +172,8 @@ async function prepararDependencias(): Promise<void> {
     estado = {
       fase: 'falhou',
       mensagem:
-        'ffmpeg nao encontrado no cache. Coloque ffmpeg.exe e ffprobe.exe em ' +
-        `${caminhos.ffmpegDir} — o bootstrap automatico dele entra no proximo release.`,
+        'ffmpeg não encontrado no cache. Coloque ffmpeg.exe e ffprobe.exe em ' +
+        `${caminhos.ffmpegDir} — o bootstrap automático dele entra no próximo release.`,
     };
     return;
   }

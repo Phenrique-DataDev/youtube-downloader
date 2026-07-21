@@ -41,7 +41,7 @@ describe('AT-006/007/008 — classificacao a partir de stderr real', () => {
     const r = classificarStderr(fx.RATE_LIMIT_ENGANOSA_NAO_VERIFICADA, 1);
     expect(r.categoria).toBe('rate-limit');
     expect(r.categoria).not.toBe('indisponivel');
-    expect(r.mensagem).toContain('nao sumiu');
+    expect(r.mensagem).toContain('não sumiu');
   });
 });
 

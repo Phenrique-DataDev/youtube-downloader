@@ -54,16 +54,22 @@ export function extrairHashEsperado(conteudoSums: string, nomeArquivo: string): 
 }
 
 export class ErroDeIntegridade extends Error {
-  constructor(
-    readonly arquivo: string,
-    readonly esperado: string | null,
-    readonly obtido: string,
-  ) {
+  // Campos declarados e atribuidos explicitamente: `parameter properties`
+  // (`constructor(readonly x)`) nao existem em JavaScript, entao o
+  // strip-only do Node — que apaga tipos sem transformar codigo — as rejeita.
+  readonly arquivo: string;
+  readonly esperado: string | null;
+  readonly obtido: string;
+
+  constructor(arquivo: string, esperado: string | null, obtido: string) {
     super(
       esperado === null
         ? `Nao encontrei o checksum de ${arquivo} na lista oficial — download recusado.`
         : `Checksum de ${arquivo} nao confere. Esperado ${esperado}, obtido ${obtido}.`,
     );
     this.name = 'ErroDeIntegridade';
+    this.arquivo = arquivo;
+    this.esperado = esperado;
+    this.obtido = obtido;
   }
 }

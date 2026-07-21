@@ -81,42 +81,42 @@ const PADROES: readonly Padrao[] = [
 const MENSAGENS: Record<CategoriaErro, { mensagem: string; temporario: boolean }> = {
   'rate-limit': {
     mensagem:
-      'O YouTube esta limitando os pedidos deste computador no momento. ' +
-      'Espere alguns minutos e tente de novo — o video nao sumiu.',
+      'O YouTube está limitando os pedidos deste computador no momento. ' +
+      'Espere alguns minutos e tente de novo — o vídeo não sumiu.',
     temporario: true,
   },
   'sem-rede': {
-    mensagem: 'Nao consegui falar com o YouTube. Verifique sua conexao com a internet.',
+    mensagem: 'Não consegui falar com o YouTube. Verifique sua conexão com a internet.',
     temporario: true,
   },
   privado: {
-    mensagem: 'Este video e privado. So quem tem acesso concedido pelo dono consegue ve-lo.',
+    mensagem: 'Este vídeo é privado. Só quem tem acesso concedido pelo dono consegue vê-lo.',
     temporario: false,
   },
   'restrito-idade': {
     mensagem:
-      'Este video tem restricao de idade e exige uma conta conectada, ' + 'o que este app nao faz.',
+      'Este vídeo tem restrição de idade e exige uma conta conectada, ' + 'o que este app não faz.',
     temporario: false,
   },
   geobloqueado: {
-    mensagem: 'Este video nao esta disponivel na sua regiao.',
+    mensagem: 'Este vídeo não está disponível na sua região.',
     temporario: false,
   },
   'ao-vivo': {
     mensagem:
-      'Este video e uma transmissao ao vivo ou ainda vai estrear. ' +
+      'Este vídeo é uma transmissão ao vivo ou ainda vai estrear. ' +
       'Tente novamente quando terminar.',
     temporario: true,
   },
   indisponivel: {
-    mensagem: 'Este video nao esta mais disponivel — pode ter sido removido ou tornado privado.',
+    mensagem: 'Este vídeo não está mais disponível — pode ter sido removido ou tornado privado.',
     temporario: false,
   },
   desconhecido: {
     // Fallback obrigatorio (SC-5/AT-013). Nunca joga stderr cru na UI.
     mensagem:
-      'Nao consegui baixar este video. O motivo nao foi identificado — ' +
-      'veja os detalhes tecnicos ou tente novamente.',
+      'Não consegui baixar este vídeo. O motivo não foi identificado — ' +
+      'veja os detalhes técnicos ou tente novamente.',
     temporario: true,
   },
 };

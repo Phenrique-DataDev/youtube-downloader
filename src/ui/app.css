@@ -34,6 +34,14 @@
   box-sizing: border-box;
 }
 
+/* `display` em regra de classe VENCE o atributo `hidden` (que so aplica
+   `display: block` do user-agent). Sem isto, todo elemento com `hidden` +
+   `display: grid` aparece na tela mesmo "escondido" — foi o que aconteceu:
+   o painel de sucesso e o de erro nasciam visiveis. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   padding: 2rem 1rem 4rem;
