@@ -1,3 +1,4 @@
 {"phase":"brainstorm","feature":"ARQUITETURA_ENTREGA","iterations":2}
 {"phase":"define","feature":"DOWNLOADER_LOCAL","iterations":1}
 {"phase":"design","feature":"DOWNLOADER_LOCAL","iterations":1}
+{"phase":"ship","feature":"DOWNLOADER_LOCAL","iterations":1}
