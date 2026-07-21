@@ -20,13 +20,20 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/ui/**/*.ts'],
+    // A UI roda no browser, nao no Node — os globais sao outros.
+    files: ['src/ui/**/*.{js,ts}'],
     languageOptions: {
       globals: {
         document: 'readonly',
         window: 'readonly',
-        EventSource: 'readonly',
+        location: 'readonly',
         fetch: 'readonly',
+        URLSearchParams: 'readonly',
+        TextDecoderStream: 'readonly',
+        EventSource: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        console: 'readonly',
       },
     },
   },

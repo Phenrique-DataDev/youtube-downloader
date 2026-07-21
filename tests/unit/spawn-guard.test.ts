@@ -95,6 +95,7 @@ describe('AT-012 — a sonda simula e precede o download', () => {
       urlCanonica: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       formato: 'audio',
       destino: 'C:/out',
+      arquivoDeCaminho: 'C:/temp/d.txt',
       ffmpegDir: 'C:/ff',
     });
 
@@ -114,6 +115,7 @@ describe('AT-012 — a sonda simula e precede o download', () => {
         formato: 'video',
         destino: 'C:/o',
         ffmpegDir: 'C:/ff',
+        arquivoDeCaminho: 'C:/t/d.txt',
       }),
     );
 

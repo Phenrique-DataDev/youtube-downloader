@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Baixar do YouTube</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="cabecalho">
+        <h1>Baixar do YouTube</h1>
+        <p class="subtitulo">O download sai da sua conexão. Nada passa por servidor nenhum.</p>
+      </header>
+
+      <div id="aviso-preparo" class="aviso" hidden>
+        <span class="girando" aria-hidden="true"></span>
+        <span id="aviso-preparo-texto">Preparando na primeira execução…</span>
+      </div>
+
+      <form id="formulario" class="formulario" autocomplete="off">
+        <label class="campo">
+          <span class="rotulo">Link do vídeo</span>
+          <input
+            id="url"
+            name="url"
+            type="text"
+            placeholder="https://www.youtube.com/watch?v=…"
+            spellcheck="false"
+            required
+          />
+        </label>
+
+        <fieldset class="formatos">
+          <legend class="rotulo">O que você quer</legend>
+          <label class="opcao">
+            <input type="radio" name="formato" value="video" checked />
+            <span>Vídeo <small>MP4</small></span>
+          </label>
+          <label class="opcao">
+            <input type="radio" name="formato" value="audio" />
+            <span>Áudio <small>MP3</small></span>
+          </label>
+        </fieldset>
+
+        <details id="avancado" class="avancado">
+          <summary>Opções avançadas</summary>
+          <label class="campo">
+            <span class="rotulo">Resolução</span>
+            <select id="resolucao" disabled>
+              <option value="">Melhor disponível</option>
+            </select>
+            <small class="dica" id="dica-resolucao">
+              Cole um link primeiro — as opções vêm do vídeo.
+            </small>
+          </label>
+        </details>
+
+        <button id="botao" type="submit" class="botao">Baixar</button>
+      </form>
+
+      <section id="painel" class="painel" hidden aria-live="polite">
+        <div id="info" class="info" hidden>
+          <!-- A miniatura e criada pelo JS somente quando a sonda devolve uma
+               URL real: o campo thumbnail pode vir null do -J, e uma imagem
+               sem endereco renderiza como caixa quebrada. -->
+          <div id="thumb-slot" class="thumb-slot"></div>
+          <div class="info-texto">
+            <strong id="titulo"></strong>
+            <span id="canal" class="canal"></span>
+          </div>
+        </div>
+
+        <div id="progresso-caixa" class="progresso-caixa" hidden>
+          <div class="barra">
+            <div id="barra-preenchida" class="barra-preenchida"></div>
+          </div>
+          <div class="progresso-texto">
+            <span id="progresso-rotulo">Preparando…</span>
+            <span id="progresso-numeros"></span>
+          </div>
+        </div>
+
+        <div id="sucesso" class="sucesso" hidden>
+          <strong>Pronto.</strong>
+          <span id="caminho-arquivo" class="caminho"></span>
+        </div>
+
+        <div id="erro" class="erro" hidden>
+          <strong id="erro-mensagem"></strong>
+          <details id="erro-detalhes-caixa">
+            <summary>Ver detalhes técnicos</summary>
+            <pre id="erro-detalhes"></pre>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

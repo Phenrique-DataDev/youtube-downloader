@@ -5,6 +5,7 @@ const BASE = {
   urlCanonica: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   destino: 'C:/Users/teste/Downloads',
   ffmpegDir: 'C:/cache/ffmpeg',
+  arquivoDeCaminho: 'C:/temp/destino.txt',
 };
 
 describe('contrato de invocacao — flags obrigatorias em toda chamada', () => {
@@ -137,6 +138,26 @@ describe('progresso e caminho final', () => {
   });
 
   it('pede o caminho final via after_move:filepath', () => {
-    expect(args[args.indexOf('--print') + 1]).toBe('after_move:filepath');
+    expect(args[args.indexOf('--print-to-file') + 1]).toBe('after_move:filepath');
+  });
+
+  it('passa --progress: sem ele o modo quiet implicito suprime tudo', () => {
+    // Tanto `--print` quanto `--print-to-file` ligam `--quiet` implicitamente,
+    // e quiet suprime o progresso: o template fica configurado mas nao emite
+    // linha nenhuma e a barra fica parada o download inteiro. Medido em
+    // runtime (yt-dlp 2026.07.04) — nao e teoria.
+    expect(args).toContain('--progress');
+  });
+
+  it('usa --print-to-file, NUNCA --print', () => {
+    // Com `--print`, o canal `postprocess` fica mudo mesmo com `--progress`,
+    // e a barra congelaria em 100% durante a conversao MP3 — a falha exata
+    // que o segundo canal existe para evitar. Medido em runtime.
+    expect(args).toContain('--print-to-file');
+    expect(args).not.toContain('--print');
+  });
+
+  it('grava o caminho no arquivo indicado', () => {
+    expect(args[args.indexOf('--print-to-file') + 2]).toBe(BASE.arquivoDeCaminho);
   });
 });

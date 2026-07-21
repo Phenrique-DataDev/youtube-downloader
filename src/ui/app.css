@@ -1,0 +1,376 @@
+/* UI local, sem framework. Um campo, dois botoes, um painel e uma barra —
+   React/Vue custariam build, dependencias e peso no binario sem resolver nada
+   que o DOM nativo nao resolva. */
+
+:root {
+  --fundo: #14161a;
+  --superficie: #1d2026;
+  --superficie-alta: #262a32;
+  --borda: #343945;
+  --texto: #eceef2;
+  --texto-fraco: #9aa1ae;
+  --acento: #ff4d4d;
+  --acento-fundo: #2a1a1c;
+  --ok: #4ade80;
+  --raio: 10px;
+  --transicao: 160ms ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --fundo: #f6f7f9;
+    --superficie: #ffffff;
+    --superficie-alta: #eef0f4;
+    --borda: #d6dae2;
+    --texto: #1a1d23;
+    --texto-fraco: #5b6472;
+    --acento: #d92d2d;
+    --acento-fundo: #fdeaea;
+    --ok: #16a34a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem 4rem;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 34rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.cabecalho h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitulo {
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: 0.875rem;
+}
+
+/* ---- aviso de preparo (bootstrap em andamento) ---- */
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: var(--superficie-alta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  font-size: 0.875rem;
+  color: var(--texto-fraco);
+}
+
+.girando {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--borda);
+  border-top-color: var(--acento);
+  border-radius: 50%;
+  animation: girar 700ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation-duration: 2s;
+  }
+  * {
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---- formulario ---- */
+
+.formulario {
+  display: grid;
+  gap: 1.125rem;
+  padding: 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+.campo {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.rotulo {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+}
+
+input[type='text'],
+select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--fundo);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9375rem;
+  transition: border-color var(--transicao);
+}
+
+input[type='text']:focus-visible,
+select:focus-visible,
+.botao:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+select:disabled {
+  opacity: 0.5;
+}
+
+.formatos {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.formatos legend {
+  padding: 0 0 0.375rem;
+}
+
+.opcao {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color var(--transicao),
+    background var(--transicao);
+}
+
+.opcao:has(input:checked) {
+  border-color: var(--acento);
+  background: var(--acento-fundo);
+}
+
+.opcao small {
+  display: block;
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+.avancado summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--texto-fraco);
+}
+
+.avancado[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.dica {
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+.botao {
+  padding: 0.75rem;
+  background: var(--acento);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--transicao);
+}
+
+.botao:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- painel de resultado ---- */
+
+.painel {
+  display: grid;
+  gap: 1rem;
+}
+
+.info {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  padding: 0.875rem;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+.thumb-slot:empty {
+  display: none;
+}
+
+.thumb {
+  width: 6rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.info-texto {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.info-texto strong {
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.canal {
+  color: var(--texto-fraco);
+  font-size: 0.8125rem;
+}
+
+.progresso-caixa {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.barra {
+  height: 0.5rem;
+  background: var(--superficie-alta);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* Anima `transform`, nunca `width`: a barra recebe dezenas de atualizacoes por
+   segundo durante o download, e animar largura forcaria relayout a cada quadro.
+   `scaleX` roda no compositor. */
+.barra-preenchida {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--acento);
+  border-radius: inherit;
+  transition: transform 200ms ease;
+}
+
+/* Sem total conhecido: barra indeterminada em vez de mentir uma porcentagem. */
+.barra-preenchida.indeterminada {
+  width: 35%;
+  transform: none;
+  transition: none;
+  animation: deslizar 1.2s ease-in-out infinite;
+}
+
+@keyframes deslizar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.progresso-texto {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.sucesso,
+.erro {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--borda);
+  font-size: 0.875rem;
+}
+
+/* Estado comunicado pela cor do texto do titulo e pelo fundo, nao por uma
+   tarja lateral colorida. */
+.sucesso {
+  background: var(--superficie);
+}
+
+.sucesso strong {
+  color: var(--ok);
+}
+
+.erro {
+  background: var(--acento-fundo);
+  border-color: color-mix(in srgb, var(--acento) 35%, var(--borda));
+}
+
+.erro strong {
+  color: var(--acento);
+}
+
+.caminho {
+  color: var(--texto-fraco);
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.erro summary {
+  cursor: pointer;
+  color: var(--texto-fraco);
+  font-size: 0.8125rem;
+}
+
+.erro pre {
+  margin: 0.5rem 0 0;
+  padding: 0.625rem;
+  background: var(--fundo);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--texto-fraco);
+}

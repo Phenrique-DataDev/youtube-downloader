@@ -47,6 +47,8 @@ export interface OpcoesDownload {
   destino: string;
   /** Diretorio que contem ffmpeg.exe e ffprobe.exe. */
   ffmpegDir: string;
+  /** Arquivo onde o yt-dlp grava o caminho final (ver `--print-to-file`). */
+  arquivoDeCaminho: string;
 }
 
 /**
@@ -73,18 +75,28 @@ export function montarArgsProbe(urlCanonica: string, ffmpegDir: string): string[
 }
 
 export function montarArgsDownload(opcoes: OpcoesDownload): string[] {
-  const { urlCanonica, formato, alturaPreferida, destino, ffmpegDir } = opcoes;
+  const { urlCanonica, formato, alturaPreferida, destino, ffmpegDir, arquivoDeCaminho } = opcoes;
 
   const args = [
     ...argsComuns(ffmpegDir),
+    // `--progress` e OBRIGATORIO aqui. Medido em 2026-07-20 (yt-dlp
+    // 2026.07.04): tanto `--print` quanto `--print-to-file` ligam `--quiet`
+    // implicitamente, e o modo quiet suprime o progresso. Sem esta flag o
+    // template fica configurado mas nao emite linha nenhuma.
+    '--progress',
     '--progress-template',
     TEMPLATE_DOWNLOAD,
     '--progress-template',
     TEMPLATE_POSTPROCESS,
-    // Unico jeito estavel de saber onde o arquivo acabou: `.part` e merge
-    // produzem nomes intermediarios que nao servem.
-    '--print',
+    // `--print-to-file`, NAO `--print`. Medido na mesma sessao: com `--print`
+    // o canal `postprocess` fica mudo mesmo com `--progress` — a barra
+    // congelaria em 100% durante a conversao MP3, que e exatamente a falha
+    // que o segundo canal existe para evitar. Mandando o caminho a um arquivo,
+    // os dois canais sobrevivem e o caminho nao precisa ser separado do ruido
+    // do stdout.
+    '--print-to-file',
     'after_move:filepath',
+    arquivoDeCaminho,
     '--no-simulate',
     '-o',
     `${destino}/%(title).200B [%(id)s].%(ext)s`,
