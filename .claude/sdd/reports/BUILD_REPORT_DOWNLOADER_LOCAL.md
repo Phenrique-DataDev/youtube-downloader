@@ -21,12 +21,12 @@ baixa vídeo (MP4/H.264) ou áudio (MP3) pela conexão do próprio usuário. Ver
 verdade** — dois downloads reais concluídos pela UI, com container e codec conferidos por
 `ffprobe`, não pela extensão do arquivo.
 
-**Falta para o release:** o empacotamento (`.exe`). O núcleo do produto está pronto e provado; a
-distribuição não.
+**Falta para o release:** a landing do GitHub Pages (`site/`, prevista no DESIGN e nunca criada).
 
 > **Atualização 2026-07-21** — o bootstrap automático do ffmpeg foi implementado e verificado
 > (AT-003 e SC-8 passaram de ⚠️ parcial para ✅). Ver [ADR 0001](../../../docs/adr/0001-fonte-do-ffmpeg.md);
-> as seções abaixo trazem os números. O empacotamento segue pendente.
+> as seções abaixo trazem os números. O **empacotamento** também foi fechado (SC-6, ADR 0002),
+> junto com um bug de assets que só existia depois de empacotar. Resta a **landing**.
 
 ## Arquivos criados/alterados
 
@@ -108,7 +108,7 @@ found 0 vulnerabilities
 |----|-----------|---------|
 | SC-1 arranque | ✅ | UI responde em < 1 s; bootstrap não bloqueia |
 | SC-2/3 download | ✅ | 3 338 ms (MP4) e 2 612 ms (MP3), do log real |
-| SC-6 tamanho | ⏳ não medido | Depende do empacotamento, que não foi feito |
+| SC-6 tamanho | ✅ | **94,0 MB** (teto 120 MB), Bun `--compile`. Node SEA medido em 88,2 MB e descartado por custo de build — ADR 0002 |
 | SC-7 update yt-dlp | ✅ | Roda em paralelo; log: `update yt-dlp :: ok` |
 | SC-8 ffmpeg pinado | ✅ | Pinado por tag + SHA256 ancorado no código; download recusado se o hash não conferir. Vigiado diariamente pelo CI (`pin-ffmpeg.yml`) |
 
@@ -119,7 +119,7 @@ found 0 vulnerabilities
 | **`--print-to-file` no lugar de `--print`** | Medido: `--print` liga `--quiet` implicitamente e **suprime o progresso**. Mesmo com `--progress`, o canal `postprocess` continua mudo sob `--print` — a barra congelaria em 100% durante a conversão MP3, a falha exata que o segundo canal existe para evitar |
 | **`--progress` acrescentado ao contrato** | Consequência do acima: sem ele o template fica configurado e não emite uma linha |
 | ~~**ffmpeg não é baixado automaticamente**~~ | Fechado em 2026-07-21 — fonte escolhida por medição, versão e hash pinados (ADR 0001) |
-| **Empacotamento não executado** | Bun não está instalado nesta máquina; Node SEA não foi medido. A escolha do DESIGN era explicitamente "medir os dois" |
+| ~~**Empacotamento não executado**~~ | Fechado em 2026-07-21: os dois foram medidos e Bun escolhido (ADR 0002) |
 
 ## Issues e blockers
 
@@ -156,4 +156,5 @@ seria confundir "o código funciona na minha máquina" com "o produto está pron
 
 ---
 
-**Próximo passo:** empacotamento (`.exe` + medição do SC-6) e bootstrap do ffmpeg, antes do `/ship`.
+**Próximo passo:** a landing em `site/` — último item do DESIGN ainda não construído. Ela só vai
+ao ar com o repositório público, o mesmo bloqueio que forçou o pin do ffmpeg no BtbN.
