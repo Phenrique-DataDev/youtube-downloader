@@ -21,8 +21,12 @@ baixa vídeo (MP4/H.264) ou áudio (MP3) pela conexão do próprio usuário. Ver
 verdade** — dois downloads reais concluídos pela UI, com container e codec conferidos por
 `ffprobe`, não pela extensão do arquivo.
 
-**Falta para o release:** o empacotamento (`.exe`) e o bootstrap automático do ffmpeg. O núcleo do
-produto está pronto e provado; a distribuição não.
+**Falta para o release:** o empacotamento (`.exe`). O núcleo do produto está pronto e provado; a
+distribuição não.
+
+> **Atualização 2026-07-21** — o bootstrap automático do ffmpeg foi implementado e verificado
+> (AT-003 e SC-8 passaram de ⚠️ parcial para ✅). Ver [ADR 0001](../../../docs/adr/0001-fonte-do-ffmpeg.md);
+> as seções abaixo trazem os números. O empacotamento segue pendente.
 
 ## Arquivos criados/alterados
 
@@ -86,7 +90,7 @@ found 0 vulnerabilities
 |----|-----------|-----------|
 | AT-001 vídeo MP4 | ✅ | Download real pela UI; `ffprobe`: `format_name: mov,mp4...`, `codec_name: h264` + `aac`, 629 KB |
 | AT-002 áudio MP3 | ✅ | Download real pela UI; `ffprobe`: `format_name: mp3`, `codec_name: mp3`, 139 kbps, sem trilha de vídeo |
-| AT-003 1ª execução | ⚠️ parcial | UI sobe antes do bootstrap e o botão fica desabilitado com aviso — verificado. O **download automático do ffmpeg** não existe ainda |
+| AT-003 1ª execução | ✅ | UI sobe antes do bootstrap e o botão fica desabilitado com aviso. O ffmpeg agora **baixa sozinho**: cache frio verificado em **2,6 s**, hash conferido, `ffmpeg -version` e `ffprobe -version` executam |
 | AT-004 resolução | ✅ | `-S res:2160` num vídeo de 240p degradou e entregou arquivo, sem falhar (`tests/integration/pipeline.test.ts`) |
 | AT-005 URL inválida | ✅ | 16 entradas inválidas + spy provando que **nenhum `spawn` ocorreu**; confirmado na UI com `vimeo.com` |
 | AT-006 indisponível | ✅ | Fixture de stderr real + sonda real de id inexistente → `indisponivel` |
@@ -106,7 +110,7 @@ found 0 vulnerabilities
 | SC-2/3 download | ✅ | 3 338 ms (MP4) e 2 612 ms (MP3), do log real |
 | SC-6 tamanho | ⏳ não medido | Depende do empacotamento, que não foi feito |
 | SC-7 update yt-dlp | ✅ | Roda em paralelo; log: `update yt-dlp :: ok` |
-| SC-8 ffmpeg pinado | ⚠️ parcial | Verificação de presença existe; o download pinado não |
+| SC-8 ffmpeg pinado | ✅ | Pinado por tag + SHA256 ancorado no código; download recusado se o hash não conferir. Vigiado diariamente pelo CI (`pin-ffmpeg.yml`) |
 
 ## Desvios do design
 
@@ -114,7 +118,7 @@ found 0 vulnerabilities
 |--------|---------|
 | **`--print-to-file` no lugar de `--print`** | Medido: `--print` liga `--quiet` implicitamente e **suprime o progresso**. Mesmo com `--progress`, o canal `postprocess` continua mudo sob `--print` — a barra congelaria em 100% durante a conversão MP3, a falha exata que o segundo canal existe para evitar |
 | **`--progress` acrescentado ao contrato** | Consequência do acima: sem ele o template fica configurado e não emite uma linha |
-| **ffmpeg não é baixado automaticamente** | Escopo: exigiria escolher fonte, pinar versão e hash. O app detecta a ausência e diz o que fazer, em vez de falhar de forma obscura |
+| ~~**ffmpeg não é baixado automaticamente**~~ | Fechado em 2026-07-21 — fonte escolhida por medição, versão e hash pinados (ADR 0001) |
 | **Empacotamento não executado** | Bun não está instalado nesta máquina; Node SEA não foi medido. A escolha do DESIGN era explicitamente "medir os dois" |
 
 ## Issues e blockers
@@ -134,7 +138,11 @@ found 0 vulnerabilities
 
 **Pendências conhecidas:**
 
-- **ffmpeg manual.** Hoje é preciso colocar `ffmpeg.exe` e `ffprobe.exe` no cache à mão.
+- ~~**ffmpeg manual.**~~ Resolvido em 2026-07-21 (ADR 0001).
+- **URL do ffmpeg vai apodrecer.** O pin usa uma tag `autobuild-*` do BtbN, que é podada. É
+  dívida assumida enquanto o repositório for privado (asset de Release privado não baixa sem
+  token). Vigiada diariamente pelo CI, não esquecida — ao publicar o repo, migrar para Release
+  próprio.
 - **AT-008 sem fixture real.** Só se resolve se alguém for de fato bloqueado.
 - **A-009 (runtime JS).** Aviso de depreciação segue válido, sem perda de formatos hoje.
 
