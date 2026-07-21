@@ -4,25 +4,25 @@
 > [BUILD_REPORT](../.claude/sdd/reports/BUILD_REPORT_DOWNLOADER_LOCAL.md), que são débitos de uma
 > feature específica: aqui fica trabalho que ainda não entrou em nenhuma fase SDD.
 
-## Parte visual — adiado deliberadamente (2026-07-21)
+## Parte visual — construída em 2026-07-21
 
-Trabalho de interface e apresentação, agrupado porque compartilha a mesma disciplina (o subagent
-`designer`) e porque nenhum item bloqueia o funcionamento do app.
+Os três itens saíram (ver **Fechados**). O que sobra desta seção não é mais trabalho de
+interface: é **publicação**.
 
 | Item | Estado | Nota |
 |------|--------|------|
-| **Landing `site/`** | não existe | Previsto no DESIGN (`site/`, reaproveita o CSS da UI). **Último item do build** que falta. Só vai ao ar com o repositório público (Pages exige repo público no plano Free) |
-| **README do projeto** | ausente | Repositório sem README. Relevante ao publicar — é a primeira coisa que se lê |
-| **Refino da UI local** | funcional, não refinada | A UI serve o propósito e foi verificada; nunca passou por uma revisão de design |
+| **Publicar a landing no Pages** | escrita, fora do ar | `site/` existe e é self-contained. Pages exige repositório público no plano Free — depende da decisão de publicar, não de mais design |
+| **Link de release na landing** | ausente por honestidade | A ação primária hoje leva aos passos de build, porque não há release publicado. Vira link real quando o **Workflow de release** (abaixo) existir |
+
+**Dependência circular — resolvida na prática.** O DEFINE dizia "público só depois de implementado
+e testado", enquanto a landing precisava do Pages, que precisa do repo público. Foi resolvida pelo
+primeiro caminho previsto: **a landing foi construída antes**, então a publicação pode acontecer de
+uma vez, sem janela em que o download exista sem página de instruções.
 
 **Por que a landing importa além da estética:** o `.exe` não é assinado (certificado descartado por
-custo zero), então todo usuário verá o aviso do SmartScreen. A landing é a mitigação prevista — ela
-precisa existir **antes** de divulgar o download, não depois.
-
-**Dependência circular a resolver:** o plano de publicação do DEFINE diz "público só depois de
-implementado e testado", mas o último item pendente (a landing) precisa do Pages, que precisa do
-repositório público. Ou se constrói a landing antes e publica tudo de uma vez, ou se publica com
-uma janela sem página de instruções.
+custo zero), então todo usuário verá o aviso do SmartScreen. A landing é a mitigação prevista — e
+por isso o aviso ganhou seção própria nela, não uma nota de rodapé. Ela precisa estar **no ar antes**
+de o download ser divulgado.
 
 ## Infraestrutura
 
@@ -49,3 +49,7 @@ uma janela sem página de instruções.
 | ~~Varredura de segredos no histórico~~ | 2026-07-21 — limpo: 15 commits, 1 autor, nenhum segredo |
 | ~~Fixture de teste com vídeo protegido~~ | 2026-07-21 — trocado por obra Creative Commons; ver abaixo |
 | ~~LICENSE ausente~~ | 2026-07-21 — MIT + nota sobre dependências não redistribuídas |
+| ~~README do projeto~~ | 2026-07-21 — commit `0ef85d0` |
+| ~~Refino da UI local~~ | 2026-07-21 — commit `d8e7c9c`; dark-only, hierarquia por espaço, sem scroll em 1440×900 |
+| ~~Landing `site/`~~ | 2026-07-21 — commit `d8e7c9c`; mesma linguagem visual da UI, self-contained. **Existe, mas ainda não está no ar** — ver acima |
+| ~~Escolha de formato de áudio (SHOULD do DEFINE)~~ | 2026-07-21 — commit `1596ea5`; MP3 ou M4A sem reconversão. O SHOULD estava pela metade e nenhum AT o guardava |
