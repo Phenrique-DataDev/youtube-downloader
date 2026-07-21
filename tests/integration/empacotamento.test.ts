@@ -49,7 +49,10 @@ describe.skipIf(!temBinario)('binario empacotado', () => {
     processo = spawn(copia, [], { cwd: trabalho, shell: false, windowsHide: true });
 
     base = await new Promise<string>((resolver, rejeitar) => {
-      const prazo = setTimeout(() => rejeitar(new Error('o app nao anunciou a URL em 30 s')), 30_000);
+      const prazo = setTimeout(
+        () => rejeitar(new Error('o app nao anunciou a URL em 30 s')),
+        30_000,
+      );
       processo.stdout?.on('data', (pedaco: Buffer) => {
         const achado = /http:\/\/127\.0\.0\.1:\d+\/\?t=[\w-]+/.exec(pedaco.toString());
         if (achado) {
@@ -69,14 +72,17 @@ describe.skipIf(!temBinario)('binario empacotado', () => {
     expect(base).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?t=.+/);
   });
 
-  it.each(['app.css', 'app.js'])('serve %s embutido, sem o codigo-fonte por perto', async (nome) => {
-    const raiz = base.split('?')[0];
-    const resposta = await fetch(`${raiz}${nome}`);
+  it.each(['app.css', 'app.js'])(
+    'serve %s embutido, sem o codigo-fonte por perto',
+    async (nome) => {
+      const raiz = base.split('?')[0];
+      const resposta = await fetch(`${raiz}${nome}`);
 
-    expect(resposta.status).toBe(200);
-    // Corpo real, nao um 404 disfarcado de 200.
-    expect((await resposta.text()).length).toBeGreaterThan(1000);
-  });
+      expect(resposta.status).toBe(200);
+      // Corpo real, nao um 404 disfarcado de 200.
+      expect((await resposta.text()).length).toBeGreaterThan(1000);
+    },
+  );
 
   it('serve a pagina inicial', async () => {
     const resposta = await fetch(base);

@@ -37,11 +37,10 @@ async function montarZip(nomes: string[], conteudo = 'binario de mentira'): Prom
   const zip = join(trabalho, 'pacote.zip');
   const tar = join(process.env['SystemRoot'] ?? 'C:\\Windows', 'System32', 'tar.exe');
   await new Promise<void>((ok, falhou) => {
-    const filho = spawn(
-      tar,
-      ['-a', '-cf', zip, '-C', trabalho, 'ffmpeg-0.0.0-essentials_build'],
-      { shell: false, windowsHide: true },
-    );
+    const filho = spawn(tar, ['-a', '-cf', zip, '-C', trabalho, 'ffmpeg-0.0.0-essentials_build'], {
+      shell: false,
+      windowsHide: true,
+    });
     filho.on('error', falhou);
     filho.on('close', (c) => (c === 0 ? ok() : falhou(new Error(`tar -c falhou: ${c}`))));
   });

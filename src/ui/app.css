@@ -1,33 +1,52 @@
-/* UI local, sem framework. Um campo, dois botoes, um painel e uma barra —
+/* UI local, sem framework. Um campo, dois formatos, um painel e uma barra —
    React/Vue custariam build, dependencias e peso no binario sem resolver nada
-   que o DOM nativo nao resolva. */
+   que o DOM nativo nao resolva.
+
+   Dark-only de proposito: a linguagem visual e preto puro com hierarquia feita
+   de ar, e um tema claro derivado dela seria outro design (superficies, sombra
+   e o gradiente de topo teriam que ser reinventados). Manter dois temas com um
+   deles sem dono e como nao ter nenhum — o bloco `prefers-color-scheme: light`
+   foi removido, e `color-scheme: dark` faz o user-agent desenhar scrollbar e
+   controles nativos no tema certo. */
 
 :root {
-  --fundo: #14161a;
-  --superficie: #1d2026;
-  --superficie-alta: #262a32;
-  --borda: #343945;
-  --texto: #eceef2;
-  --texto-fraco: #9aa1ae;
-  --acento: #ff4d4d;
-  --acento-fundo: #2a1a1c;
-  --ok: #4ade80;
-  --raio: 10px;
-  --transicao: 160ms ease;
-}
+  color-scheme: dark;
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --fundo: #f6f7f9;
-    --superficie: #ffffff;
-    --superficie-alta: #eef0f4;
-    --borda: #d6dae2;
-    --texto: #1a1d23;
-    --texto-fraco: #5b6472;
-    --acento: #d92d2d;
-    --acento-fundo: #fdeaea;
-    --ok: #16a34a;
-  }
+  /* Primitivos */
+  --preto: #000000;
+  --carvao: #0d0d0d;
+  --grafite: #1f1f1f;
+  --contorno: #5c5c5c; /* 3.1:1 sobre preto — piso do WCAG 1.4.11 p/ borda de controle */
+  --branco: #ffffff;
+  --cinza-claro: #a1a1a1; /* 8.1:1 — corpo */
+  --cinza: #8a8a8a; /* 6.1:1 — micro-rotulo, dica */
+  --laranja: #ff4b2b; /* 6.3:1 — acento unico */
+  --verde: #4ade80; /* 12.0:1 — sucesso */
+
+  /* Semanticos */
+  --fundo: var(--preto);
+  --superficie: var(--carvao);
+  --superficie-alta: var(--grafite);
+  --texto: var(--branco);
+  --texto-suave: var(--cinza-claro);
+  --texto-fraco: var(--cinza);
+  --borda: var(--contorno);
+  --acento: var(--laranja);
+  --ok: var(--verde);
+
+  /* Escala de espaco (base 4px) */
+  --e1: 0.25rem;
+  --e2: 0.5rem;
+  --e3: 0.75rem;
+  --e4: 1rem;
+  --e5: 1.5rem;
+  --e6: 2rem;
+  --e7: 3rem;
+
+  --raio: 12px;
+  --raio-pequeno: 4px;
+  --pill: 999px;
+  --transicao: 160ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 * {
@@ -44,7 +63,11 @@
 
 body {
   margin: 0;
-  padding: 2rem 1rem 4rem;
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 0.9rem + 2.5vw, 3rem) var(--e4) var(--e5);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: var(--e6);
   background: var(--fundo);
   color: var(--texto);
   font-family:
@@ -52,25 +75,59 @@ body {
     -apple-system,
     'Segoe UI',
     sans-serif;
+  /* Aproxima o grotesco geometrico da referencia sem baixar webfont: o binario
+     serve a UI offline, entao qualquer @font-face externo seria um buraco. */
+  font-feature-settings: 'ss01', 'cv05';
+  font-size: 0.875rem;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Unico elemento cromatico amplo: um halo de acento no topo que morre no preto.
+   Fica atras do conteudo e no maximo em 18% — acima disso o corpo cinza cairia
+   abaixo de AA sobre a area tingida. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: 60vh;
+  background: radial-gradient(ellipse 110% 100% at 50% -20%, rgb(255 75 43 / 18%), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .app {
-  max-width: 34rem;
+  width: 100%;
+  max-width: 32rem;
   margin: 0 auto;
+  align-self: center;
   display: grid;
-  gap: 1.5rem;
+  gap: var(--e5);
+}
+
+/* ---- cabecalho ---- */
+
+.micro {
+  margin: 0 0 var(--e3);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
 }
 
 .cabecalho h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.5rem;
-  letter-spacing: -0.02em;
+  margin: 0 0 var(--e2);
+  font-size: clamp(1.75rem, 1.47rem + 1.14vw, 2.5rem);
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .subtitulo {
   margin: 0;
-  color: var(--texto-fraco);
+  max-width: 46ch;
+  color: var(--texto-suave);
   font-size: 0.875rem;
 }
 
@@ -79,19 +136,18 @@ body {
 .aviso {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.75rem 1rem;
+  gap: var(--e2);
+  padding: var(--e3) var(--e4);
   background: var(--superficie-alta);
-  border: 1px solid var(--borda);
   border-radius: var(--raio);
-  font-size: 0.875rem;
-  color: var(--texto-fraco);
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
 }
 
 .girando {
-  width: 0.875rem;
-  height: 0.875rem;
-  border: 2px solid var(--borda);
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid rgb(255 255 255 / 20%);
   border-top-color: var(--acento);
   border-radius: 50%;
   animation: girar 700ms linear infinite;
@@ -104,108 +160,136 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .girando {
-    animation-duration: 2s;
-  }
-  * {
-    transition-duration: 1ms !important;
-  }
-}
-
 /* ---- formulario ---- */
 
+/* Separacao por ar, nao por caixa: o formulario nao tem cartao nem borda —
+   quem agrupa e o espaco. */
 .formulario {
   display: grid;
-  gap: 1.125rem;
-  padding: 1.25rem;
-  background: var(--superficie);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
+  gap: var(--e5);
 }
 
 .campo {
   display: grid;
-  gap: 0.375rem;
+  gap: var(--e2);
 }
 
 .rotulo {
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--texto-fraco);
 }
 
 input[type='text'],
 select {
   width: 100%;
-  padding: 0.625rem 0.75rem;
-  background: var(--fundo);
+  min-height: 2.75rem; /* 44px: alvo de toque */
+  padding: var(--e3) var(--e4);
+  background: var(--superficie);
   color: var(--texto);
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: var(--pill);
   font: inherit;
-  font-size: 0.9375rem;
-  transition: border-color var(--transicao);
+  font-size: 0.875rem;
+  transition:
+    border-color var(--transicao),
+    background var(--transicao);
 }
 
-input[type='text']:focus-visible,
-select:focus-visible,
-.botao:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: 2px;
+input[type='text']::placeholder {
+  color: var(--texto-fraco);
+}
+
+input[type='text']:hover,
+select:hover:not(:disabled) {
+  border-color: var(--texto-fraco);
+}
+
+:focus-visible {
+  outline: 2px solid var(--branco);
+  outline-offset: 3px;
 }
 
 select:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .formatos {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: var(--e2);
   margin: 0;
   padding: 0;
   border: 0;
 }
 
 .formatos legend {
-  padding: 0 0 0.375rem;
+  padding: 0 0 var(--e3);
 }
 
 .opcao {
-  flex: 1;
+  flex: 1 1 8rem;
+  min-height: 2.75rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  background: var(--fundo);
+  gap: var(--e3);
+  padding: var(--e3) var(--e4);
+  background: var(--superficie);
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: var(--pill);
   cursor: pointer;
   transition:
     border-color var(--transicao),
     background var(--transicao);
 }
 
-.opcao:has(input:checked) {
+.opcao:hover {
+  border-color: var(--texto-fraco);
+}
+
+/* O radio nativo continua sendo o radio nativo (teclado e semantica de graça);
+   so a pintura vira o quadradinho de estado da linguagem visual. */
+.opcao input[type='radio'] {
+  appearance: none;
+  margin: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: transparent;
+  transition:
+    background var(--transicao),
+    border-color var(--transicao);
+}
+
+.opcao input[type='radio']:checked {
+  background: var(--acento);
   border-color: var(--acento);
-  background: var(--acento-fundo);
+}
+
+.opcao:has(input:checked) {
+  background: var(--superficie-alta);
+  border-color: var(--texto-fraco);
 }
 
 .opcao small {
-  display: block;
   color: var(--texto-fraco);
   font-size: 0.75rem;
 }
 
 .avancado summary {
   cursor: pointer;
-  font-size: 0.8125rem;
-  color: var(--texto-fraco);
+  width: fit-content;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
 }
 
 .avancado[open] summary {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--e3);
 }
 
 .dica {
@@ -213,24 +297,36 @@ select:disabled {
   font-size: 0.75rem;
 }
 
+/* Acao primaria: pill branca solida — a unica area clara da pagina, entao nao
+   precisa de tamanho nem de cor para ser encontrada. */
 .botao {
-  padding: 0.75rem;
-  background: var(--acento);
-  color: #fff;
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: var(--e3) var(--e6);
+  background: var(--branco);
+  color: var(--preto);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--pill);
   font: inherit;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 550;
   cursor: pointer;
-  transition: filter var(--transicao);
+  transition:
+    opacity var(--transicao),
+    transform var(--transicao);
 }
 
 .botao:hover:not(:disabled) {
-  filter: brightness(1.1);
+  opacity: 0.88;
+}
+
+.botao:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .botao:disabled {
-  opacity: 0.5;
+  background: var(--superficie-alta);
+  color: var(--texto-fraco);
   cursor: not-allowed;
 }
 
@@ -238,16 +334,15 @@ select:disabled {
 
 .painel {
   display: grid;
-  gap: 1rem;
+  gap: var(--e4);
 }
 
 .info {
   display: flex;
-  gap: 0.875rem;
+  gap: var(--e3);
   align-items: center;
-  padding: 0.875rem;
+  padding: var(--e3);
   background: var(--superficie);
-  border: 1px solid var(--borda);
   border-radius: var(--raio);
 }
 
@@ -255,39 +350,44 @@ select:disabled {
   display: none;
 }
 
+/* aspect-ratio reserva o espaco antes da imagem chegar: sem isso o painel
+   inteiro pula quando a miniatura carrega (CLS). */
 .thumb {
-  width: 6rem;
+  width: 5.5rem;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--raio-pequeno);
   display: block;
+  background: var(--superficie-alta);
 }
 
 .info-texto {
   display: grid;
-  gap: 0.125rem;
+  gap: var(--e1);
   min-width: 0;
 }
 
 .info-texto strong {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
 .canal {
-  color: var(--texto-fraco);
+  color: var(--texto-suave);
   font-size: 0.8125rem;
 }
 
 .progresso-caixa {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--e2);
 }
 
 .barra {
-  height: 0.5rem;
+  height: 0.25rem;
   background: var(--superficie-alta);
-  border-radius: 999px;
+  border-radius: var(--pill);
   overflow: hidden;
 }
 
@@ -301,7 +401,7 @@ select:disabled {
   transform-origin: left center;
   background: var(--acento);
   border-radius: inherit;
-  transition: transform 200ms ease;
+  transition: transform 200ms ease-out;
 }
 
 /* Sem total conhecido: barra indeterminada em vez de mentir uma porcentagem. */
@@ -324,42 +424,59 @@ select:disabled {
 .progresso-texto {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8125rem;
-  color: var(--texto-fraco);
+  gap: var(--e3);
+  font-size: 0.75rem;
+  color: var(--texto-suave);
   font-variant-numeric: tabular-nums;
 }
 
 .sucesso,
 .erro {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.875rem 1rem;
+  gap: var(--e2);
+  padding: var(--e4);
   border-radius: var(--raio);
-  border: 1px solid var(--borda);
-  font-size: 0.875rem;
+  background: var(--superficie);
+  font-size: 0.8125rem;
 }
 
-/* Estado comunicado pela cor do texto do titulo e pelo fundo, nao por uma
-   tarja lateral colorida. */
-.sucesso {
-  background: var(--superficie);
+/* Quadradinho de estado no lugar da tarja lateral: mesma leitura, um decimo do
+   peso visual. */
+.sucesso strong,
+.erro strong {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  font-weight: 550;
+}
+
+.sucesso strong::before,
+.erro strong::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .sucesso strong {
   color: var(--ok);
 }
 
-.erro {
-  background: var(--acento-fundo);
-  border-color: color-mix(in srgb, var(--acento) 35%, var(--borda));
+.sucesso strong::before {
+  background: var(--ok);
 }
 
 .erro strong {
   color: var(--acento);
 }
 
+.erro strong::before {
+  background: var(--acento);
+}
+
 .caminho {
-  color: var(--texto-fraco);
+  color: var(--texto-suave);
   font-family: ui-monospace, 'Cascadia Code', monospace;
   font-size: 0.75rem;
   overflow-wrap: anywhere;
@@ -367,18 +484,57 @@ select:disabled {
 
 .erro summary {
   cursor: pointer;
-  color: var(--texto-fraco);
-  font-size: 0.8125rem;
+  width: fit-content;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
 }
 
 .erro pre {
-  margin: 0.5rem 0 0;
-  padding: 0.625rem;
-  background: var(--fundo);
-  border-radius: 6px;
+  margin: var(--e2) 0 0;
+  padding: var(--e3);
+  background: var(--preto);
+  border-radius: var(--raio-pequeno);
   font-size: 0.75rem;
   overflow-x: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  color: var(--texto-suave);
+}
+
+/* ---- rodape ---- */
+
+.rodape {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
   color: var(--texto-fraco);
+}
+
+.rodape a {
+  color: var(--texto-suave);
+  text-decoration-color: var(--contorno);
+  text-underline-offset: 3px;
+}
+
+.rodape a:hover {
+  color: var(--texto);
+}
+
+/* Movimento e sinal, nao enfeite: com a preferencia ligada, o estado final
+   continua correto (a barra ainda mostra a fracao via scaleX, o aviso ainda
+   diz o que esta acontecendo) — so o movimento sai. */
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation-duration: 2.4s;
+  }
+  .barra-preenchida.indeterminada {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+  }
 }

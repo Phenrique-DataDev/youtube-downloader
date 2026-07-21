@@ -36,7 +36,8 @@ function resolverBun() {
   const candidatos = [
     process.env.BUN_PATH,
     process.platform === 'win32' ? 'bun.exe' : 'bun',
-    process.env.APPDATA && join(process.env.APPDATA, 'npm', 'node_modules', 'bun', 'bin', 'bun.exe'),
+    process.env.APPDATA &&
+      join(process.env.APPDATA, 'npm', 'node_modules', 'bun', 'bin', 'bun.exe'),
   ].filter(Boolean);
 
   for (const candidato of candidatos) {

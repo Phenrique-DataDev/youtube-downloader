@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>youtube-downloader — baixe pela sua própria conexão</title>
+    <meta
+      name="description"
+      content="App local para Windows que baixa vídeo (MP4) ou áudio (MP3) do YouTube pela sua conexão. Nada passa por servidor."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="palco">
+      <section class="hero">
+        <p class="micro">youtube-downloader · Windows 10/11 · 64 bits</p>
+        <h1>Baixe do YouTube pela sua própria conexão.</h1>
+        <p class="lead">
+          Vídeo em MP4 (H.264, resolução selecionável) ou áudio em MP3. O programa roda na sua
+          máquina, o download sai da sua conexão e os arquivos vão direto para a pasta Downloads.
+          Nada passa por servidor nenhum.
+        </p>
+
+        <details class="acao">
+          <summary class="pill pill-primaria">Gerar o .exe a partir do código</summary>
+          <div class="acao-corpo">
+            <p>Com Node 22 ou mais novo, na raiz do repositório:</p>
+            <pre><code>npm install
+npm run build</code></pre>
+            <p class="dica">O executável aparece em <code>dist/</code>.</p>
+          </div>
+        </details>
+
+        <p class="verdade">
+          <span class="ponto" aria-hidden="true"></span>
+          Ainda não há release publicado: por enquanto o executável se gera a partir do código.
+          Licença MIT.
+        </p>
+      </section>
+
+      <section class="lateral" aria-labelledby="uso">
+        <h2 class="micro" id="uso">Como usar</h2>
+        <ol class="passos">
+          <li><span class="num">1</span> Baixe o <code>.exe</code>.</li>
+          <li><span class="num">2</span> Execute — o navegador abre sozinho.</li>
+          <li><span class="num">3</span> Cole a URL e escolha vídeo ou áudio.</li>
+        </ol>
+
+        <div class="nota">
+          <h3>
+            <span class="swatch swatch-acento" aria-hidden="true"></span> Aviso do SmartScreen
+          </h3>
+          <p>
+            O executável não é assinado digitalmente, então o Windows exibe um alerta na primeira
+            vez. É esperado: assinatura de código é um certificado pago, e o projeto não tem um.
+            Para seguir, clique em <strong>Mais informações</strong> e depois em
+            <strong>Executar assim mesmo</strong>. Se preferir, compile você mesmo a partir do
+            código, acima.
+          </p>
+        </div>
+
+        <div class="nota">
+          <h3><span class="swatch swatch-neutro" aria-hidden="true"></span> Primeira execução</h3>
+          <p>
+            Na primeira vez o app baixa <code>yt-dlp</code> (17 MB) e <code>ffmpeg</code> (160 MB),
+            conferindo o SHA256 de cada um. Só acontece uma vez; depois a abertura é imediata.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      feito por Pedro —
+      <a
+        href="https://www.linkedin.com/in/pedro-henrique-lopes-datadev"
+        target="_blank"
+        rel="noopener noreferrer"
+        >linkedin www.linkedin.com/in/pedro-henrique-lopes-datadev</a
+      >
+    </footer>
+  </body>
+</html>

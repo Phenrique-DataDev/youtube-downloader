@@ -82,9 +82,7 @@ const BINARIOS = ['ffmpeg.exe', 'ffprobe.exe'] as const;
  * Nao e chamada em paralelo com `garantirYtdlp` de proposito: sao ~106 MB e
  * disputar banda com o download que o usuario pediu piora os dois.
  */
-export async function garantirFfmpeg(
-  opcoes: OpcoesBootstrap & { pin?: PinFfmpeg },
-): Promise<void> {
+export async function garantirFfmpeg(opcoes: OpcoesBootstrap & { pin?: PinFfmpeg }): Promise<void> {
   const { caminhos, aoMudarEstado, sinal } = opcoes;
   const pin = opcoes.pin ?? PIN_PADRAO;
 

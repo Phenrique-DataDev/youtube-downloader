@@ -1,0 +1,336 @@
+/* Landing do youtube-downloader (GitHub Pages). Self-contained: sem build, sem
+   CDN e sem webfont — a mesma restricao da UI do app, pelo mesmo motivo (nada
+   de dependencia externa entre o usuario e a informacao).
+
+   Os tokens abaixo sao os MESMOS de src/ui/app.css. Estao duplicados de
+   proposito: as duas superficies sao servidas por origens diferentes (binario
+   local x Pages) e nao ha build step para compartilhar um arquivo. Ao mexer em
+   cor/espaco aqui, mexa la tambem. */
+
+:root {
+  color-scheme: dark;
+
+  /* Primitivos */
+  --preto: #000000;
+  --carvao: #0d0d0d;
+  --grafite: #1f1f1f;
+  --contorno: #5c5c5c; /* 3.1:1 sobre preto — piso do WCAG 1.4.11 p/ borda de controle */
+  --branco: #ffffff;
+  --cinza-claro: #a1a1a1; /* 8.1:1 — corpo */
+  --cinza: #8a8a8a; /* 6.1:1 — micro-rotulo, dica */
+  --laranja: #ff4b2b; /* 6.3:1 — acento unico */
+
+  /* Semanticos */
+  --fundo: var(--preto);
+  --superficie: var(--carvao);
+  --superficie-alta: var(--grafite);
+  --texto: var(--branco);
+  --texto-suave: var(--cinza-claro);
+  --texto-fraco: var(--cinza);
+  --borda: var(--contorno);
+  --acento: var(--laranja);
+
+  /* Escala de espaco (base 4px) */
+  --e1: 0.25rem;
+  --e2: 0.5rem;
+  --e3: 0.75rem;
+  --e4: 1rem;
+  --e5: 1.5rem;
+  --e6: 2rem;
+  --e7: 3rem;
+
+  --raio: 12px;
+  --raio-pequeno: 4px;
+  --pill: 999px;
+  --transicao: 160ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  padding: clamp(2rem, 1rem + 4vw, 4.5rem) clamp(1.25rem, 0.5rem + 3vw, 4rem) var(--e5);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: var(--e6);
+  background: var(--fundo);
+  color: var(--texto);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-feature-settings: 'ss01', 'cv05';
+  font-size: 0.875rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Unico elemento cromatico amplo: acento que morre no preto antes de chegar ao
+   corpo do texto. Teto de 18% — acima disso o cinza do corpo cai abaixo de AA
+   sobre a area tingida. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: 65vh;
+  background: radial-gradient(ellipse 90% 100% at 25% -20%, rgb(255 75 43 / 18%), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.palco {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  align-self: center;
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  grid-template-columns: 1fr;
+}
+
+/* Breakpoint pelo conteudo, nao por device: e onde a coluna de texto ja
+   alcancou a medida confortavel e sobra largura para os passos ao lado. */
+@media (min-width: 60rem) {
+  .palco {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: center;
+  }
+}
+
+/* ---- hero ---- */
+
+.micro {
+  margin: 0 0 var(--e4);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+h1 {
+  margin: 0 0 var(--e4);
+  font-size: clamp(2.25rem, 1.6rem + 2.67vw, 4rem);
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 16ch;
+}
+
+.lead {
+  margin: 0 0 var(--e6);
+  max-width: 52ch;
+  color: var(--texto-suave);
+}
+
+/* ---- acao primaria (pill) ---- */
+
+/* `details` em vez de botao com JS: a pagina precisa fazer sentido sem script,
+   e o `summary` ja traz teclado (Enter/Espaco) e aria-expanded de graça. */
+.acao {
+  margin: 0 0 var(--e5);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 2.75rem; /* 44px: alvo de toque */
+  padding: var(--e3) var(--e6);
+  border-radius: var(--pill);
+  font-size: 0.875rem;
+  font-weight: 550;
+  cursor: pointer;
+  list-style: none;
+  width: fit-content;
+  transition:
+    opacity var(--transicao),
+    background var(--transicao);
+}
+
+.pill::-webkit-details-marker {
+  display: none;
+}
+
+.pill-primaria {
+  background: var(--branco);
+  color: var(--preto);
+}
+
+.pill-primaria:hover {
+  opacity: 0.88;
+}
+
+.acao[open] .pill-primaria {
+  background: var(--superficie-alta);
+  color: var(--texto);
+}
+
+.acao-corpo {
+  margin-top: var(--e4);
+  padding: var(--e4);
+  background: var(--superficie);
+  border-radius: var(--raio);
+  max-width: 32rem;
+}
+
+.acao-corpo p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+}
+
+.acao-corpo .dica {
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+pre {
+  margin: var(--e3) 0;
+  padding: var(--e3) var(--e4);
+  background: var(--preto);
+  border-radius: var(--raio-pequeno);
+  overflow-x: auto;
+}
+
+code {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.75rem;
+  color: var(--texto);
+}
+
+.acao-corpo p code {
+  color: var(--texto-suave);
+}
+
+/* ---- linha de verdade sobre o release ---- */
+
+.verdade {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+  margin: 0;
+  max-width: 46ch;
+  color: var(--texto-fraco);
+  font-size: 0.75rem;
+}
+
+.ponto {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 2px;
+  background: var(--texto-fraco);
+  flex-shrink: 0;
+  transform: translateY(-1px);
+}
+
+/* ---- coluna lateral ---- */
+
+.lateral {
+  display: grid;
+  gap: var(--e5);
+  align-content: start;
+}
+
+.passos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--e3);
+  color: var(--texto-suave);
+}
+
+.passos li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e3);
+}
+
+.num {
+  color: var(--texto-fraco);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* Separacao por ar e por superficie, nao por divisor de 1px. */
+.nota {
+  padding: var(--e4);
+  background: var(--superficie);
+  border-radius: var(--raio);
+}
+
+.nota h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  margin: 0 0 var(--e2);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+}
+
+.nota p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.8125rem;
+  max-width: 54ch;
+}
+
+.nota strong {
+  color: var(--texto);
+  font-weight: 550;
+}
+
+.swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.swatch-acento {
+  background: var(--acento);
+}
+
+.swatch-neutro {
+  background: var(--contorno);
+}
+
+/* ---- rodape ---- */
+
+.rodape {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+}
+
+.rodape a {
+  color: var(--texto-suave);
+  text-decoration-color: var(--contorno);
+  text-underline-offset: 3px;
+}
+
+.rodape a:hover {
+  color: var(--texto);
+}
+
+:focus-visible {
+  outline: 2px solid var(--branco);
+  outline-offset: 3px;
+  border-radius: var(--raio-pequeno);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}
