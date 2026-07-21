@@ -245,10 +245,16 @@ describe('pacote com estrutura inesperada', () => {
 });
 
 describe('pin padrao', () => {
-  it('aponta para um Release nosso, nao para o upstream', () => {
-    // Se alguem reverter para gyan.dev/BtbN sem querer, a primeira execucao
-    // volta a levar 10 min (ou a 404 quando a tag for podada).
-    expect(PIN_PADRAO.url).toContain('github.com/Phenrique-DataDev/youtube-downloader/releases');
+  it('nao aponta para gyan.dev', () => {
+    // Medido: aquele host serve a 0,28 MB/s, o que dava ~10 min de primeira
+    // execucao e reprovava o AT-003. Voltar para la e regressao, nao detalhe.
+    expect(PIN_PADRAO.url).not.toContain('gyan.dev');
+  });
+
+  it('pina uma tag concreta, nunca `latest`', () => {
+    // `latest` mudaria debaixo de nos e invalidaria o sha256 sem ninguem
+    // tocar no repositorio — o app passaria a recusar o proprio download.
+    expect(PIN_PADRAO.url).not.toContain('/latest/');
   });
 
   it('tem um sha256 de 64 hex — nunca vazio ou placeholder', () => {

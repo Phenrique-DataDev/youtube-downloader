@@ -7,29 +7,30 @@
  * adiciona um modo de falha que ninguem pediu. Mudar de versao e uma decisao
  * do projeto, num release, revisada.
  *
- * FONTE — por que re-hospedamos em vez de baixar do upstream.
- * Tres candidatos foram MEDIDOS em 2026-07-21, e o gargalo foi o host, nao o
- * tamanho:
+ * FONTE — medida, nao suposta. Tres candidatos em 2026-07-21; o gargalo acabou
+ * sendo o HOST, nao o tamanho do arquivo:
  *
  *   gyan.dev   106 MB @ 0,28 MB/s -> ~10 min   (URL permanente)
- *   BtbN       167 MB @   25 MB/s -> ~7 s      (tag autobuild, PODADA com o tempo)
- *   nosso      106 MB @   25 MB/s -> ~7 s      (permanente E rapido)
+ *   BtbN       167 MB @   25 MB/s -> ~2 s      (tag autobuild, PODADA com o tempo)
+ *   Release nosso  =BtbN em velocidade, URL permanente — mas exige repo publico
  *
- * Dez minutos de primeira execucao reprova o AT-003; uma URL que 404 daqui a
- * uns meses quebra a instalacao de todo mundo de uma vez. Re-hospedar o asset
- * no nosso proprio Release resolve os dois: fica no CDN do GitHub e a URL e
- * nossa. O projeto ja publica o .exe por Release — nao e infra nova.
+ * Dez minutos de primeira execucao reprova o AT-003 na pratica, entao gyan.dev
+ * saiu. A escolha ideal seria re-hospedar num Release nosso (rapido E
+ * permanente), mas asset de repo PRIVADO nao baixa sem token, e o bootstrap faz
+ * fetch anonimo. Enquanto o repo nao for publico, ficamos no BtbN.
  *
- * O arquivo e o do gyan.dev byte a byte (mesmo hash), so mudou de endereco.
- * Como e build GPL, a redistribuicao vem com LICENSE e oferta de source no
- * proprio Release — ver docs/adr/0001-fonte-do-ffmpeg.md.
+ * DIVIDA CONHECIDA: a tag `autobuild-<data>` do BtbN e podada com o tempo, e
+ * quando isso acontecer esta URL passa a dar 404 — quebrando a primeira
+ * execucao de todo mundo de uma vez, longe do commit que causou. Por isso o CI
+ * vigia a URL diariamente (.github/workflows/pin-ffmpeg.yml): a divida e
+ * monitorada, nao esquecida. Ao publicar o repo, migrar para Release proprio
+ * (ver docs/adr/0001-fonte-do-ffmpeg.md).
  *
- * HASH — por que a constante e daqui e nao do `.sha256` do servidor:
- * baixar o binario e o checksum do MESMO servidor nao prova nada: quem troca um
- * troca o outro. O hash abaixo foi verificado contra o pacote ORIGINAL do
- * gyan.dev antes do upload, e vive no CODIGO, sob revisao de commit. E o unico
- * ponto do bootstrap onde a confianca e ancorada fora da rede — e e o que torna
- * o re-hospedar seguro: se o nosso Release for adulterado, o hash acusa.
+ * HASH — por que a constante e daqui e nao do `checksums.sha256` do servidor:
+ * baixar o binario e o checksum do MESMO servidor nao prova nada — quem troca
+ * um troca o outro. O hash abaixo foi verificado baixando o pacote e vive no
+ * CODIGO, sob revisao de commit. E o unico ponto do bootstrap onde a confianca
+ * e ancorada fora da rede.
  *
  * (O yt-dlp usa o SHA2-256SUMS da release justamente porque NAO pode ser
  * pinado — ele precisa acompanhar o YouTube. Trocas diferentes, decisoes
@@ -56,14 +57,20 @@ export interface PinFfmpeg {
   rotulo: string;
 }
 
-const FFMPEG_VERSAO = '8.0.1';
+/**
+ * A tag do BtbN faz parte do pin: `latest` mudaria debaixo de nos e invalidaria
+ * o hash sem aviso. O CI vigia esta URL (ver .github/workflows/pin-ffmpeg.yml).
+ */
+const BTBN_TAG = 'autobuild-2026-07-21-13-38';
+const BTBN_ARQUIVO = 'ffmpeg-n8.1.2-29-g703dcc25b9-win64-gpl-8.1.zip';
 
 export const PIN_PADRAO: PinFfmpeg = {
-  url: `https://github.com/Phenrique-DataDev/youtube-downloader/releases/download/deps-ffmpeg-${FFMPEG_VERSAO}/ffmpeg-${FFMPEG_VERSAO}-essentials_build.zip`,
-  // O MESMO arquivo publicado pelo gyan.dev, byte a byte — so re-hospedado.
-  // Verificado em 2026-07-21 contra o pacote original antes do upload.
-  sha256: 'e2aaeaa0fdbc397d4794828086424d4aaa2102cef1fb6874f6ffd29c0b88b673',
-  rotulo: `ffmpeg-${FFMPEG_VERSAO}-essentials_build.zip`,
+  url: `https://github.com/BtbN/FFmpeg-Builds/releases/download/${BTBN_TAG}/${BTBN_ARQUIVO}`,
+  // Baixado e verificado em 2026-07-21; confere com o checksums.sha256 da
+  // mesma release (o cruzamento pega corrupcao, nao adulteracao — por isso a
+  // ancora de confianca e esta constante, ver cabecalho).
+  sha256: 'ebf57e8b1a10b176b88c3cbc66e68a4aed472cf47520b0fbf003e892fb3be642',
+  rotulo: BTBN_ARQUIVO,
 };
 
 /** `-x` exige os DOIS: o ffprobe e binario separado (ver deps.ffmpegPresente). */

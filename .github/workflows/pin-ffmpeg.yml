@@ -1,0 +1,41 @@
+# Vigia o pin do ffmpeg — ver scripts/verificar-pin-ffmpeg.mjs e a ADR 0001.
+#
+# A URL pinada aponta para uma tag `autobuild-*` do BtbN, que e podada com o
+# tempo. Sem este workflow, a descoberta viria de um usuario relatando que a
+# primeira execucao falha — meses depois do commit que pinou.
+name: pin do ffmpeg
+
+on:
+  schedule:
+    # Diario. O que se vigia aqui muda por acao de terceiro, nao por commit
+    # nosso, entao rodar so em push nao adiantaria nada.
+    - cron: '17 6 * * *'
+  push:
+    paths:
+      - 'src/bootstrap/ffmpeg.ts'
+      - 'scripts/verificar-pin-ffmpeg.mjs'
+      - '.github/workflows/pin-ffmpeg.yml'
+  workflow_dispatch:
+
+jobs:
+  disponivel:
+    name: a URL pinada ainda existe?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --experimental-strip-types scripts/verificar-pin-ffmpeg.mjs
+
+  integridade:
+    name: o pacote continua o mesmo?
+    # ~167 MB: vale quando o pin muda ou sob demanda, nao todo dia.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --experimental-strip-types scripts/verificar-pin-ffmpeg.mjs --integridade

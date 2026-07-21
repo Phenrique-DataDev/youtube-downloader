@@ -20,6 +20,19 @@ export default tseslint.config(
     },
   },
   {
+    // Scripts de manutencao rodam no Node como JS puro. Os .ts do app nao
+    // precisam disto: o typescript-eslint desliga `no-undef` em TS, porque o
+    // proprio compilador ja resolve os globais via @types/node.
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+      },
+    },
+  },
+  {
     // A UI roda no browser, nao no Node — os globais sao outros.
     files: ['src/ui/**/*.{js,ts}'],
     languageOptions: {
