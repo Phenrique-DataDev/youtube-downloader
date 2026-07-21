@@ -13,3 +13,7 @@ build/
 # Artefatos de teste
 tests/.tmp/
 coverage/
+
+# UI embutida, regenerada a cada build/typecheck/teste a partir de src/ui/.
+# Versionar geraria divergencia silenciosa com os arquivos-fonte.
+src/ui/ativos.gerado.ts

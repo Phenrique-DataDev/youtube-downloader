@@ -8,15 +8,17 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node --experimental-strip-types src/main.ts",
-    "typecheck": "tsc --noEmit",
+    "ativos": "node scripts/gerar-ativos.mjs",
+    "dev": "npm run ativos && node --experimental-strip-types src/main.ts",
+    "typecheck": "npm run ativos && tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run --project unit",
-    "test:integration": "vitest run --project integration",
-    "test:all": "vitest run",
+    "test": "npm run ativos && vitest run --project unit",
+    "test:integration": "npm run ativos && vitest run --project integration",
+    "test:all": "npm run ativos && vitest run",
     "build": "node scripts/build.mjs",
+    "pin:ffmpeg": "node --experimental-strip-types scripts/verificar-pin-ffmpeg.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test"
   },
   "devDependencies": {

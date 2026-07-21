@@ -8,8 +8,8 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { obterAtivo } from '../ui/ativos.ts';
+import { extname } from 'node:path';
 import { hostEhPermitido, tokenConfere } from './guards.ts';
 
 export interface ManipuladoresApi {
@@ -135,7 +135,7 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
   // A pagina inicial e servida sem token — ela CARREGA o token na querystring
   // para que o JS o use nas chamadas seguintes.
   if (rota === '/' || rota === '/index.html') {
-    await servirArquivo(res, join(ctx.raizUi, 'index.html'));
+    await servirArquivo(res, ctx.raizUi, 'index.html');
     return;
   }
 
@@ -223,23 +223,28 @@ async function servirEstatico(res: ServerResponse, raiz: string, rota: string): 
     responderJson(res, 404, { erro: 'Nao encontrado' });
     return;
   }
-  await servirArquivo(res, join(raiz, nome));
+  await servirArquivo(res, raiz, nome);
 }
 
-async function servirArquivo(res: ServerResponse, caminho: string): Promise<void> {
-  try {
-    const conteudo = await readFile(caminho);
-    res.writeHead(200, {
-      'Content-Type': TIPOS_MIME[extname(caminho)] ?? 'application/octet-stream',
-      // A UI e local e nunca deve ser embutida em outra pagina.
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:",
-    });
-    res.end(conteudo);
-  } catch {
+async function servirArquivo(res: ServerResponse, raiz: string, nome: string): Promise<void> {
+  // A UI vem do mapa embutido no binario; o disco e so fallback de
+  // desenvolvimento. Ver src/ui/ativos.ts — ler do disco em producao servia a
+  // pasta de codigo da maquina de BUILD.
+  const conteudo = await obterAtivo(nome, raiz);
+
+  if (conteudo === null) {
     responderJson(res, 404, { erro: 'Nao encontrado' });
+    return;
   }
+
+  res.writeHead(200, {
+    'Content-Type': TIPOS_MIME[extname(nome)] ?? 'application/octet-stream',
+    // A UI e local e nunca deve ser embutida em outra pagina.
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "default-src 'self'; img-src 'self' https: data:",
+  });
+  res.end(conteudo);
 }
 
 function responderJson(res: ServerResponse, status: number, corpo: unknown): void {
