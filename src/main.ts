@@ -16,9 +16,9 @@ import { resolverCaminhos } from './bootstrap/paths.ts';
 import {
   garantirYtdlp,
   atualizarYtdlpEmSegundoPlano,
-  ffmpegPresente,
   type EstadoBootstrap,
 } from './bootstrap/deps.ts';
+import { garantirFfmpeg } from './bootstrap/ffmpeg.ts';
 import { sondar } from './ytdlp/probe.ts';
 import { baixar } from './ytdlp/downloader.ts';
 import { encerrarTodosOsProcessos } from './ytdlp/runner.ts';
@@ -166,17 +166,15 @@ async function prepararDependencias(): Promise<void> {
     },
   });
 
-  if (!(await ffmpegPresente(caminhos))) {
-    // O ffmpeg e pinado e baixado a parte; enquanto nao estiver presente, a
-    // extracao de audio (AT-002) nao funciona.
-    estado = {
-      fase: 'falhou',
-      mensagem:
-        'ffmpeg não encontrado no cache. Coloque ffmpeg.exe e ffprobe.exe em ' +
-        `${caminhos.ffmpegDir} — o bootstrap automático dele entra no próximo release.`,
-    };
-    return;
-  }
+  // Depois do yt-dlp, nao em paralelo: sao ~106 MB e disputar banda atrasaria
+  // os dois. `garantirFfmpeg` e no-op quando o cache ja esta quente, entao isto
+  // so custa na primeira execucao.
+  await garantirFfmpeg({
+    caminhos,
+    aoMudarEstado: (novo) => {
+      estado = novo;
+    },
+  });
 
   estado = { fase: 'pronto' };
 
