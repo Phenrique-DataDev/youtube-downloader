@@ -25,6 +25,8 @@ import { encerrarTodosOsProcessos } from './ytdlp/runner.ts';
 import { iniciarServidor } from './server/http.ts';
 import { caminhoEstaConfinado } from './server/guards.ts';
 import { detectarModo, deveAbrirNavegador, sondarInstancia } from './lifecycle/instancia.ts';
+import { esconderConsole, avisarFalhaFatal } from './lifecycle/console.ts';
+import { autostartLigado, alternarAutostart } from './lifecycle/autostart.ts';
 
 const PORTA_PREFERIDA = 47821;
 
@@ -59,6 +61,17 @@ async function principal(): Promise<void> {
     raizUi,
     {
       estadoBootstrap: () => estado,
+
+      encerrar: () => void encerrar(),
+
+      autostart: {
+        ler: () => autostartLigado(),
+        // `process.execPath` e o proprio `.exe` empacotado em producao. Em
+        // desenvolvimento aponta para o node, e ligar o autostart nao faria
+        // sentido — mas tambem nao quebra: quem roda `npm run dev` nao usa
+        // este botao.
+        alternar: (desejado: boolean) => alternarAutostart(desejado, process.execPath),
+      },
 
       sondar: async (url: string) => {
         // Camada 1: validacao local. Nenhum subprocesso e disparado se a URL
@@ -179,6 +192,13 @@ async function principal(): Promise<void> {
   );
 
   console.log(`Servindo em ${servidor.url}`);
+
+  // SO AGORA a janela some. Antes daqui qualquer falha ainda precisa de um
+  // lugar para aparecer — depois daqui, `console.log` nao vai a lugar nenhum
+  // (ver o cabecalho de lifecycle/console.ts).
+  const escondeu = await esconderConsole();
+  await registrar('console', escondeu ? 'liberado' : 'permanece visivel');
+
   if (deveAbrirNavegador(modo)) abrirNoBrowser(servidor.url);
 
   // Bootstrap em paralelo — a UI ja esta no ar neste ponto.
@@ -248,7 +268,18 @@ function abrirNoBrowser(url: string): void {
   filho.unref();
 }
 
-principal().catch((erro: unknown) => {
-  console.error('Falha ao iniciar:', erro);
+principal().catch(async (erro: unknown) => {
+  const detalhe = erro instanceof Error ? erro.message : String(erro);
+
+  // O `console.error` sozinho nao serve: a janela de console fecha junto com o
+  // processo, entao a mensagem so pisca. E se o console ja tiver sido liberado,
+  // ela nem chega a piscar. Uma caixa nativa espera a pessoa (AT-107).
+  console.error('Falha ao iniciar:', detalhe);
+  await registrar('arranque falhou', detalhe);
+  await avisarFalhaFatal(
+    'youtube-downloader',
+    `Não consegui iniciar o aplicativo.\n\n${detalhe}\n\nTente executar de novo. Se continuar, reinicie o computador.`,
+  );
+
   process.exit(1);
 });

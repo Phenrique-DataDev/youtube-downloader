@@ -21,6 +21,13 @@ export interface ManipuladoresApi {
     sinal: AbortSignal,
   ) => Promise<unknown>;
   estadoBootstrap: () => unknown;
+  /** Desliga o app. Opcional: o servidor de teste nao precisa encerrar nada. */
+  encerrar?: () => void;
+  /** Le e alterna o "iniciar com o Windows". Opcional pelo mesmo motivo. */
+  autostart?: {
+    ler: () => Promise<boolean>;
+    alternar: (desejado: boolean) => Promise<boolean>;
+  };
 }
 
 export interface ServidorLocal {
@@ -221,6 +228,39 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
     case '/api/baixar': {
       const corpo = await lerJson(req);
       await responderSse(req, res, ctx.api, corpo);
+      return;
+    }
+
+    case '/api/autostart': {
+      if (ctx.api.autostart === undefined) {
+        responderJson(res, 501, { erro: 'Autostart indisponivel' });
+        return;
+      }
+
+      if (req.method !== 'POST') {
+        responderJson(res, 200, { ligado: await ctx.api.autostart.ler() });
+        return;
+      }
+
+      const corpo = (await lerJson(req)) as { ligado?: unknown };
+      // Estado RELIDO do registro, nunca o pedido: se o `reg.exe` falhar, a UI
+      // tem de mostrar o que ficou gravado, e nao confirmar o que nao houve.
+      responderJson(res, 200, { ligado: await ctx.api.autostart.alternar(corpo.ligado === true) });
+      return;
+    }
+
+    case '/api/encerrar': {
+      if (ctx.api.encerrar === undefined) {
+        responderJson(res, 501, { erro: 'Encerramento indisponivel' });
+        return;
+      }
+
+      // Responde ANTES de desligar: encerrar primeiro deixaria o navegador com
+      // um pedido pendente e a pessoa sem confirmacao de que funcionou.
+      responderJson(res, 202, { encerrando: true });
+      // `setImmediate` da a resposta a chance de sair pelo socket. Chamar
+      // `encerrar()` aqui mesmo abortaria a propria confirmacao.
+      setImmediate(() => ctx.api.encerrar?.());
       return;
     }
 

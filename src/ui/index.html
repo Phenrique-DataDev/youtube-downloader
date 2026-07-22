@@ -91,6 +91,16 @@
         <button id="botao" type="submit" class="botao" disabled>Baixar</button>
       </form>
 
+      <!-- O gesto de sair vive onde a pessoa esta olhando. Com a janela de
+           console escondida, sem isto so restaria o Gerenciador de Tarefas. -->
+      <div class="rodape-app">
+        <label class="alternador">
+          <input id="autostart" type="checkbox" />
+          <span>Iniciar junto com o Windows</span>
+        </label>
+        <button id="encerrar" type="button" class="botao-discreto">Encerrar o aplicativo</button>
+      </div>
+
       <section id="painel" class="painel" hidden aria-live="polite">
         <div id="info" class="info" hidden>
           <!-- A miniatura e criada pelo JS somente quando a sonda devolve uma

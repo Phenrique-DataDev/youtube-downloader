@@ -43,6 +43,8 @@ const caixaDetalhesErro = el('erro-detalhes-caixa');
 const avisoPreparo = el('aviso-preparo');
 const avisoPreparoTexto = el('aviso-preparo-texto');
 const avisoEndereco = el('aviso-endereco');
+const alternadorAutostart = el('autostart');
+const botaoEncerrar = el('encerrar');
 
 let sondando = false;
 let baixando = false;
@@ -115,8 +117,57 @@ async function iniciar() {
   TOKEN = sessao.token;
   if (sessao.enderecoEstavel === false) avisoEndereco.hidden = false;
 
+  await sincronizarAutostart();
   await acompanharBootstrap();
 }
+
+/* --------------------------------------------------- encerrar e autostart */
+
+/**
+ * O checkbox reflete o REGISTRO, nao o clique. Marcar sozinho e depois
+ * descobrir que a gravacao falhou seria mentir sobre o estado da maquina da
+ * pessoa.
+ */
+async function sincronizarAutostart() {
+  try {
+    const { ligado } = await chamar('/api/autostart');
+    alternadorAutostart.checked = ligado === true;
+    alternadorAutostart.disabled = false;
+  } catch {
+    // Sem suporte (501) ou falha: some com o controle em vez de deixar um
+    // interruptor que nao interrompe nada.
+    alternadorAutostart.closest('.alternador').hidden = true;
+  }
+}
+
+alternadorAutostart.addEventListener('change', async () => {
+  const desejado = alternadorAutostart.checked;
+  alternadorAutostart.disabled = true;
+  try {
+    const { ligado } = await chamar('/api/autostart', { ligado: desejado });
+    alternadorAutostart.checked = ligado === true;
+  } catch {
+    // Volta ao que era: o pedido nao teve efeito.
+    alternadorAutostart.checked = !desejado;
+  } finally {
+    alternadorAutostart.disabled = false;
+  }
+});
+
+botaoEncerrar.addEventListener('click', async () => {
+  // Um download em curso morre junto — perguntar antes e o minimo, porque o
+  // trabalho perdido nao volta.
+  if (baixando && !window.confirm('Há um download em andamento. Encerrar mesmo assim?')) return;
+
+  botaoEncerrar.disabled = true;
+  try {
+    await chamar('/api/encerrar', {});
+  } catch {
+    // O servidor pode morrer antes de a resposta chegar — isso e sucesso, nao
+    // falha. O que decide e a UI parar de falar com ele.
+  }
+  pararCom('Aplicativo encerrado. Pode fechar esta aba.');
+});
 
 /**
  * Estado terminal: mensagem fixa, sem spinner e sem botao. Distinto do aviso
