@@ -227,7 +227,7 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
 
     case '/api/baixar': {
       const corpo = await lerJson(req);
-      await responderSse(req, res, ctx.api, corpo);
+      await responderSse(res, ctx.api, corpo);
       return;
     }
 
@@ -274,7 +274,6 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
  * cancela o download — fechar a aba nao deixa o yt-dlp rodando sozinho.
  */
 async function responderSse(
-  req: IncomingMessage,
   res: ServerResponse,
   api: ManipuladoresApi,
   corpo: unknown,
@@ -287,7 +286,12 @@ async function responderSse(
   });
 
   const controlador = new AbortController();
-  req.on('close', () => controlador.abort());
+  // `res`, nao `req`: quando chegamos aqui o corpo do pedido ja foi consumido
+  // por `lerJson(req)`, entao o `IncomingMessage` ja esta destruido e um
+  // listener nele espera um evento que ja passou — o abort nunca dispararia.
+  // O `res` continua aberto enquanto o SSE dura, que e exatamente a janela em
+  // que queremos saber se a pessoa foi embora.
+  res.on('close', () => controlador.abort());
 
   const emitir = (evento: string, dado: unknown) => {
     if (res.writableEnded) return;

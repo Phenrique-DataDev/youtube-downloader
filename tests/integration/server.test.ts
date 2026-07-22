@@ -435,3 +435,449 @@ describe('robustez da API', () => {
     expect(r.status).toBe(404);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Leva 2 do CICLO_DE_VIDA: encerrar pela UI e o "iniciar com o Windows".
+// ---------------------------------------------------------------------------
+
+const manipuladoresBase = {
+  sondar: async () => ({}),
+  baixar: async () => ({}),
+  estadoBootstrap: () => ({ fase: 'pronto' }),
+};
+
+/** Uma porta que estava livre neste instante — o servidor de teste vai pedi-la. */
+function obterPortaLivre(): Promise<number> {
+  return new Promise((resolver, rejeitar) => {
+    const efemero = createServer();
+    efemero.listen(0, '127.0.0.1', () => {
+      const e = efemero.address();
+      const porta = typeof e === 'object' && e !== null ? e.port : 0;
+      efemero.close(() => resolver(porta));
+    });
+    efemero.on('error', rejeitar);
+  });
+}
+
+function portaAceitaBind(porta: number): Promise<boolean> {
+  return new Promise((resolver) => {
+    const tentativa = createServer();
+    tentativa.once('error', () => resolver(false));
+    tentativa.listen(porta, '127.0.0.1', () => tentativa.close(() => resolver(true)));
+  });
+}
+
+/**
+ * Espera por CONDICAO, nunca por tempo fixo: um `sleep` calibrado nesta maquina
+ * viraria teste intermitente na primeira maquina mais lenta.
+ */
+async function esperarAte(
+  condicao: () => boolean | Promise<boolean>,
+  limiteMs: number,
+  oQue: string,
+): Promise<number> {
+  const inicio = Date.now();
+  while (Date.now() - inicio < limiteMs) {
+    if (await condicao()) return Date.now() - inicio;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  throw new Error(`${oQue}: nao aconteceu em ${limiteMs} ms`);
+}
+
+describe('AT-104 — encerrar pela UI', () => {
+  it('501 quando o manipulador de encerramento nao foi fornecido', async () => {
+    // O servidor compartilhado deste arquivo nao passa `encerrar` — e o caso do
+    // servidor de teste, que nao tem app nenhum para desligar.
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/encerrar`, {
+      method: 'POST',
+      headers: comHost({ 'x-token': servidor.token }),
+    });
+
+    expect(r.status).toBe(501);
+    expect((await r.json()).erro).toBe('Encerramento indisponivel');
+  });
+
+  /**
+   * Sem token, `POST /api/encerrar` seria um DoS local: qualquer pagina aberta
+   * no navegador derrubaria o app no meio de um download.
+   */
+  it('exige token — sem ele nao encerra nada', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/encerrar`, {
+      method: 'POST',
+      headers: comHost(),
+    });
+
+    expect(r.status).toBe(401);
+  });
+
+  it('recusa procedencia cross-site mesmo com token valido', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/encerrar`, {
+      method: 'POST',
+      headers: comHost({ 'x-token': servidor.token, 'sec-fetch-site': 'cross-site' }),
+    });
+
+    expect(r.status).toBe(403);
+  });
+
+  /**
+   * O nucleo do AT-104: a confirmacao chega inteira, o desligamento acontece e
+   * o endereco fica livre para a proxima execucao.
+   *
+   * NOTA sobre o `setImmediate` de `http.ts`: ele NAO esta provado por este
+   * teste. Removendo-o, tudo aqui continua verde — e tambem continua verde num
+   * e2e com `process.exit(0)` de verdade, porque `res.end()` de um corpo
+   * pequeno ja escoou para o socket antes de o processo morrer. A defesa e
+   * correta por intencao, mas hoje e infalsificavel; nao a conte como coberta.
+   */
+  it('responde 202 integro E SO ENTAO desliga', async () => {
+    const porta = await obterPortaLivre();
+    let desligou = false;
+    // Caixa mutavel: o manipulador precisa referenciar o servidor que ainda
+    // esta sendo criado na mesma expressao.
+    const alvo: { servidor?: ServidorLocal } = {};
+
+    const local = await iniciarServidor(
+      raizUi,
+      {
+        ...manipuladoresBase,
+        encerrar: () => {
+          desligou = true;
+          void alvo.servidor?.fechar();
+        },
+      },
+      porta,
+    );
+    alvo.servidor = local;
+    expect(local.porta).toBe(porta);
+
+    const r = await fetch(`http://127.0.0.1:${porta}/api/encerrar`, {
+      method: 'POST',
+      headers: { Host: `127.0.0.1:${porta}`, 'x-token': local.token },
+    });
+
+    expect(r.status).toBe(202);
+    // O corpo tem de chegar INTEIRO: e isto que morre se o desligamento
+    // acontecer antes de a resposta ser escoada.
+    expect(await r.json()).toEqual({ encerrando: true });
+
+    await esperarAte(() => desligou, 2000, 'encerrar() chamado');
+
+    // E a porta volta a aceitar bind — nada de processo segurando o endereco.
+    const levou = await esperarAte(() => portaAceitaBind(porta), 2000, 'porta liberada');
+    expect(levou).toBeLessThan(2000);
+  });
+
+  /**
+   * Prova que `encerrar()` e mesmo invocado pela rota, e uma so vez — nao que
+   * ele seja adiado (ver a nota sobre o `setImmediate` no teste acima).
+   */
+  it('a rota invoca encerrar() exatamente uma vez', async () => {
+    const ordem: string[] = [];
+    const local = await iniciarServidor(raizUi, {
+      ...manipuladoresBase,
+      estadoBootstrap: () => {
+        ordem.push('outra-rota');
+        return { fase: 'pronto' };
+      },
+      encerrar: () => {
+        ordem.push('encerrar');
+      },
+    });
+
+    try {
+      const cabecalhos = { Host: `127.0.0.1:${local.porta}`, 'x-token': local.token };
+      const r = await fetch(`http://127.0.0.1:${local.porta}/api/encerrar`, {
+        method: 'POST',
+        headers: cabecalhos,
+      });
+      expect(r.status).toBe(202);
+
+      await esperarAte(() => ordem.includes('encerrar'), 2000, 'encerrar() chamado');
+
+      // Uma vez so: um `encerrar()` repetido mataria processos filhos duas
+      // vezes e registraria dois desligamentos no log.
+      expect(ordem.filter((e) => e === 'encerrar')).toHaveLength(1);
+    } finally {
+      await local.fechar();
+    }
+  });
+});
+
+/**
+ * AT-105 — encerrar com download em curso. O download nao pode ficar orfao: o
+ * `AbortSignal` entregue ao manipulador tem de disparar quando o servidor cai,
+ * senao o `yt-dlp` continuaria rodando invisivel depois de a pessoa ter mandado
+ * o app embora.
+ *
+ * Estes testes encontraram um defeito real em `responderSse` (o abort ficava
+ * pendurado no `req` ja destruido) — corrigido em 2026-07-22 para `res`. O
+ * segundo teste abaixo e o que prova o fix: ele falha contra o codigo antigo.
+ */
+describe('AT-105 — encerrar durante download', () => {
+  it('encerrar responde 202 mesmo com um download em voo', async () => {
+    let comecou = false;
+    let encerrou = false;
+    const alvo: { servidor?: ServidorLocal } = {};
+
+    const local = await iniciarServidor(raizUi, {
+      ...manipuladoresBase,
+      baixar: async (_corpo, emitir, sinal) => {
+        comecou = true;
+        emitir('progresso', { fracao: 0.1 });
+        await new Promise<void>((resolver) => {
+          if (sinal.aborted) return resolver();
+          sinal.addEventListener('abort', () => resolver(), { once: true });
+          // Rede de seguranca: sem ela este manipulador penduraria a suite,
+          // justamente porque o abort (hoje) nunca chega.
+          setTimeout(resolver, 3000);
+        });
+        return { ok: false, cancelado: true };
+      },
+      encerrar: () => {
+        encerrou = true;
+        void alvo.servidor?.fechar();
+      },
+    });
+    alvo.servidor = local;
+
+    const cabecalhos = {
+      Host: `127.0.0.1:${local.porta}`,
+      'x-token': local.token,
+      'content-type': 'application/json',
+    };
+
+    const download = fetch(`http://127.0.0.1:${local.porta}/api/baixar`, {
+      method: 'POST',
+      headers: cabecalhos,
+      body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=aBc123_-XyZ' }),
+    }).catch(() => undefined);
+
+    await esperarAte(() => comecou, 2000, 'download iniciou');
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/encerrar`, {
+      method: 'POST',
+      headers: cabecalhos,
+    });
+
+    expect(r.status).toBe(202);
+    await esperarAte(() => encerrou, 2000, 'encerrar() chamado');
+
+    await download;
+  });
+
+  /**
+   * Guarda de regressao do defeito corrigido em 2026-07-22.
+   *
+   * `responderSse` registrava `req.on('close', ...)` DEPOIS de `lerJson(req)`
+   * ter consumido o corpo inteiro. Com o corpo terminado o `IncomingMessage` ja
+   * esta destruido (`req.destroyed === true`), entao o listener ficava ligado a
+   * um evento JA passado e `controlador.abort()` nunca era chamado.
+   *
+   * Duas consequencias, ambas medidas contra o servidor real:
+   *   - encerrar com download em curso nao abortava o download (AT-105)
+   *   - fechar a aba tambem nao: o `baixar` corria ate o fim com
+   *     `aborted=false` e o `yt-dlp` ficava orfao — o oposto do que o
+   *     comentario de `responderSse` prometia (defeito do BUILD original)
+   *
+   * Voltar `res.on('close')` para `req.on('close')` faz este teste morrer.
+   */
+  it('o AbortSignal do download dispara quando o servidor e encerrado', async () => {
+    let abortou = false;
+    let comecou = false;
+    const alvo: { servidor?: ServidorLocal } = {};
+
+    const local = await iniciarServidor(raizUi, {
+      ...manipuladoresBase,
+      baixar: async (_corpo, emitir, sinal) => {
+        comecou = true;
+        emitir('progresso', { fracao: 0.1 });
+        await new Promise<void>((resolver) => {
+          if (sinal.aborted) return resolver();
+          sinal.addEventListener('abort', () => resolver(), { once: true });
+        });
+        abortou = sinal.aborted;
+        return { ok: false, cancelado: true };
+      },
+      encerrar: () => void alvo.servidor?.fechar(),
+    });
+    alvo.servidor = local;
+
+    const cabecalhos = {
+      Host: `127.0.0.1:${local.porta}`,
+      'x-token': local.token,
+      'content-type': 'application/json',
+    };
+
+    const download = fetch(`http://127.0.0.1:${local.porta}/api/baixar`, {
+      method: 'POST',
+      headers: cabecalhos,
+      body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=aBc123_-XyZ' }),
+    }).catch(() => undefined);
+
+    await esperarAte(() => comecou, 2000, 'download iniciou');
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/encerrar`, {
+      method: 'POST',
+      headers: cabecalhos,
+    });
+    expect(r.status).toBe(202);
+
+    await esperarAte(() => abortou, 2000, 'AbortSignal do download disparou');
+    expect(abortou).toBe(true);
+
+    await download;
+  });
+});
+
+/**
+ * AT-110 — o autostart e reversivel. O registro real nunca e tocado: o
+ * manipulador injetado guarda o estado em memoria, do mesmo jeito que
+ * `autostart.ts` guarda no `HKCU`.
+ */
+describe('AT-110 — /api/autostart', () => {
+  let local: ServidorLocal;
+  let ligadoNoRegistro = false;
+  /** Quando true, simula um `reg.exe` que falha: a escrita nao pega. */
+  let escritaFalha = false;
+  let leituras = 0;
+
+  beforeAll(async () => {
+    local = await iniciarServidor(raizUi, {
+      ...manipuladoresBase,
+      autostart: {
+        ler: async () => {
+          leituras += 1;
+          return ligadoNoRegistro;
+        },
+        alternar: async (desejado: boolean) => {
+          if (!escritaFalha) ligadoNoRegistro = desejado;
+          // Devolve o estado RELIDO, nunca o desejado — o contrato do modulo.
+          return ligadoNoRegistro;
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await local?.fechar();
+  });
+
+  const cabecalhos = () => ({ Host: `127.0.0.1:${local.porta}`, 'x-token': local.token });
+
+  it('501 quando o manipulador nao foi fornecido', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/autostart`, {
+      headers: comHost({ 'x-token': servidor.token }),
+    });
+
+    expect(r.status).toBe(501);
+    expect((await r.json()).erro).toBe('Autostart indisponivel');
+  });
+
+  it('exige token', async () => {
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      headers: { Host: `127.0.0.1:${local.porta}` },
+    });
+
+    expect(r.status).toBe(401);
+  });
+
+  it('GET le o estado sem alterar nada', async () => {
+    ligadoNoRegistro = false;
+    escritaFalha = false;
+    const antes = leituras;
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      headers: cabecalhos(),
+    });
+
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ligado: false });
+    expect(leituras).toBe(antes + 1);
+    expect(ligadoNoRegistro).toBe(false);
+  });
+
+  it('POST liga, e um GET seguinte confirma', async () => {
+    ligadoNoRegistro = false;
+    escritaFalha = false;
+
+    const post = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      method: 'POST',
+      headers: { ...cabecalhos(), 'content-type': 'application/json' },
+      body: JSON.stringify({ ligado: true }),
+    });
+
+    expect(post.status).toBe(200);
+    expect(await post.json()).toEqual({ ligado: true });
+
+    const get = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      headers: cabecalhos(),
+    });
+    expect(await get.json()).toEqual({ ligado: true });
+  });
+
+  /** A metade que importa do AT-110: ligar sem poder desligar seria uma armadilha. */
+  it('POST desliga — e a reversao e o requisito', async () => {
+    ligadoNoRegistro = true;
+    escritaFalha = false;
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      method: 'POST',
+      headers: { ...cabecalhos(), 'content-type': 'application/json' },
+      body: JSON.stringify({ ligado: false }),
+    });
+
+    expect(await r.json()).toEqual({ ligado: false });
+    expect(ligadoNoRegistro).toBe(false);
+  });
+
+  /**
+   * Qualquer coisa que nao seja `true` explicito e um pedido de DESLIGAR. Um
+   * corpo malformado nunca deve LIGAR o autostart por acidente — ligar sem que
+   * a pessoa tenha pedido e a falha mais dificil de descobrir depois.
+   */
+  it.each([
+    ['ausente', {}],
+    ['string "true"', { ligado: 'true' }],
+    ['numero 1', { ligado: 1 }],
+    ['nulo', { ligado: null }],
+  ])('corpo com ligado %s nao liga', async (_rotulo, corpo) => {
+    ligadoNoRegistro = false;
+    escritaFalha = false;
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      method: 'POST',
+      headers: { ...cabecalhos(), 'content-type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+
+    expect(await r.json()).toEqual({ ligado: false });
+    expect(ligadoNoRegistro).toBe(false);
+  });
+
+  /**
+   * O caso que o DESIGN destaca: o `reg.exe` falhou. A resposta tem de trazer o
+   * que FICOU gravado, nao o que foi pedido — senao a UI mostra "ligado" e o
+   * app nao sobe no login, sem nenhuma pista de que os dois discordam.
+   */
+  it('escrita falha => devolve o estado real, nao o pedido', async () => {
+    ligadoNoRegistro = false;
+    escritaFalha = true;
+
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      method: 'POST',
+      headers: { ...cabecalhos(), 'content-type': 'application/json' },
+      body: JSON.stringify({ ligado: true }),
+    });
+
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ligado: false });
+  });
+
+  it('nao emite CORS — o estado do autostart tambem nao e legivel de fora', async () => {
+    const r = await fetch(`http://127.0.0.1:${local.porta}/api/autostart`, {
+      headers: cabecalhos(),
+    });
+
+    expect(r.headers.get('access-control-allow-origin')).toBeNull();
+  });
+});
