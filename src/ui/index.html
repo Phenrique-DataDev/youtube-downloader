@@ -20,6 +20,15 @@
         <span id="aviso-preparo-texto">Preparando na primeira execução…</span>
       </div>
 
+      <!-- So aparece quando o app teve de subir noutra porta: o link salvo da
+           pessoa aponta para a de sempre e nao chegaria aqui. Dizer isso agora
+           evita que o favorito pareca ter quebrado sozinho. -->
+      <div id="aviso-endereco" class="aviso aviso-parado" hidden>
+        <span id="aviso-endereco-texto"
+          >O endereço de sempre estava ocupado, então este link vale só para esta sessão.</span
+        >
+      </div>
+
       <form id="formulario" class="formulario" autocomplete="off">
         <label class="campo">
           <span class="rotulo">Link do vídeo</span>

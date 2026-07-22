@@ -1,12 +1,18 @@
 /**
  * UI local. Sem framework e sem build: e servido como esta.
  *
- * O token de sessao chega na querystring da URL que o app abriu e vai em todas
- * as chamadas de API. Sem ele o servidor responde 401 — e o que impede uma
- * pagina qualquer aberta no browser de disparar downloads (CSRF local).
+ * O token de sessao NAO vem mais da URL — ele e buscado em `/api/sessao` logo
+ * ao carregar. Isso e o que torna o endereco salvavel nos favoritos: o token
+ * muda a cada execucao do app, entao um link que o carregasse morreria junto
+ * com a execucao que o criou.
+ *
+ * O que protege `/api/sessao` nao e credencial: o servidor nao emite CORS,
+ * entao o navegador entrega esta resposta ao nosso script e recusa entrega-la
+ * ao de outra origem. Sem o token, `x-token` nao pode ser montado — e header
+ * customizado cross-origin ainda esbarraria no preflight.
  */
 
-const TOKEN = new URLSearchParams(location.search).get('t') ?? '';
+let TOKEN = '';
 
 const el = (id) => document.getElementById(id);
 
@@ -36,6 +42,7 @@ const detalhesErro = el('erro-detalhes');
 const caixaDetalhesErro = el('erro-detalhes-caixa');
 const avisoPreparo = el('aviso-preparo');
 const avisoPreparoTexto = el('aviso-preparo-texto');
+const avisoEndereco = el('aviso-endereco');
 
 let sondando = false;
 let baixando = false;
@@ -82,6 +89,33 @@ async function acompanharBootstrap() {
     }
     await esperar(500);
   }
+}
+
+/**
+ * Busca o token da execucao ATUAL antes de qualquer outra chamada — sem ele
+ * toda rota de API responde 401.
+ */
+async function abrirSessao() {
+  const resposta = await fetch('/api/sessao');
+  if (!resposta.ok) throw new ErroHttp(resposta.status);
+  return resposta.json();
+}
+
+async function iniciar() {
+  let sessao;
+  try {
+    sessao = await abrirSessao();
+  } catch {
+    // Sem sessao nao ha UI utilizavel. Falhar aqui em silencio devolveria a
+    // tela morta que este ciclo veio eliminar.
+    pararCom('Não estou conseguindo falar com o app. Ele ainda está aberto?');
+    return;
+  }
+
+  TOKEN = sessao.token;
+  if (sessao.enderecoEstavel === false) avisoEndereco.hidden = false;
+
+  await acompanharBootstrap();
 }
 
 /**
@@ -485,4 +519,4 @@ function formatarTempo(segundos) {
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
-acompanharBootstrap();
+iniciar();

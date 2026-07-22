@@ -20,18 +20,27 @@ const raizUi = join(import.meta.dirname, '..', '..', 'src', 'ui');
 type Resposta = { ok: boolean; status: number; corpo?: unknown };
 
 /**
- * Monta a pagina com um `fetch` falso. `respostas` e consultado por rota; o
- * `t=` da URL existe so para o `app.js` achar um token — quem decide se ele
- * vale e a resposta simulada, nao o valor.
+ * Monta a pagina com um `fetch` falso, consultado por rota.
+ *
+ * `/api/sessao` ganha um default valido porque agora ela e a PRIMEIRA chamada
+ * de toda carga — sem ela nao ha token e nada mais acontece. Um teste que
+ * queira exercitar a falha de sessao sobrescreve a rota explicitamente.
  */
 async function montarPagina(respostas: Record<string, Resposta>) {
+  const comSessao: Record<string, Resposta> = {
+    '/api/sessao': { ok: true, status: 200, corpo: { token: 'token-da-execucao-atual' } },
+    ...respostas,
+  };
+
   const [html, js] = await Promise.all([
     readFile(join(raizUi, 'index.html'), 'utf8'),
     readFile(join(raizUi, 'app.js'), 'utf8'),
   ]);
 
+  // URL LIMPA, como o favorito da pessoa. O token nao vem mais daqui — a
+  // pagina o busca em /api/sessao depois de carregar.
   const dom = new JSDOM(html, {
-    url: 'http://127.0.0.1:47821/?t=token-desta-aba',
+    url: 'http://127.0.0.1:47821/',
     runScripts: 'dangerously',
   });
 
@@ -41,7 +50,7 @@ async function montarPagina(respostas: Record<string, Resposta>) {
     writable: true,
     value: (rota: string) => {
       chamadas.push(rota);
-      const r = respostas[rota] ?? { ok: false, status: 500 };
+      const r = comSessao[rota] ?? { ok: false, status: 500 };
       return Promise.resolve({
         ok: r.ok,
         status: r.status,
@@ -119,14 +128,70 @@ describe('UI — bootstrap e sessao', () => {
       '/api/estado': { ok: false, status: 401 },
     });
 
-    await ate(() => chamadas.length > 0);
-    const apos401 = chamadas.length;
+    // Conta so /api/estado: /api/sessao tambem aparece em `chamadas`, e
+    // esperar por "qualquer chamada" resolveria antes de o laco sequer comecar.
+    const tentativas = () => chamadas.filter((r) => r === '/api/estado').length;
+
+    await ate(() => tentativas() > 0);
+    const apos401 = tentativas();
 
     // Uma tentativa levaria 500 ms; esperar o dobro sem nova chamada mostra
     // que o laco parou de verdade.
     await new Promise((r) => setTimeout(r, 1100));
 
-    expect(chamadas.length).toBe(apos401);
+    expect(tentativas()).toBe(apos401);
     expect(apos401).toBe(1);
+  });
+
+  /**
+   * Se `/api/sessao` falha, nao ha token e nenhuma chamada seguinte passaria do
+   * 401. Falhar em silencio aqui devolveria exatamente a tela morta que o ciclo
+   * anterior veio eliminar — so que numa etapa mais cedo.
+   */
+  it('falha ao abrir sessao tambem vira mensagem', async () => {
+    const { doc } = await montarPagina({
+      '/api/sessao': { ok: false, status: 500 },
+    });
+    const botao = doc.getElementById('botao') as HTMLButtonElement;
+    const aviso = doc.getElementById('aviso-preparo') as HTMLElement;
+
+    await ate(() => !aviso.hidden);
+
+    expect(botao.disabled).toBe(true);
+    expect(aviso.classList.contains('aviso-parado')).toBe(true);
+  });
+
+  /**
+   * Cenario 4 do DESIGN: o app teve de subir noutra porta, entao o favorito da
+   * pessoa nao aponta para ca. Sem este aviso o link salvo apenas "para de
+   * funcionar", sem explicacao.
+   */
+  it('avisa quando o endereco nao e o de sempre', async () => {
+    const { doc } = await montarPagina({
+      '/api/sessao': {
+        ok: true,
+        status: 200,
+        corpo: { token: 'tok', enderecoEstavel: false },
+      },
+      '/api/estado': { ok: true, status: 200, corpo: { fase: 'pronto' } },
+    });
+    const avisoEndereco = doc.getElementById('aviso-endereco') as HTMLElement;
+
+    await ate(() => !avisoEndereco.hidden);
+
+    expect(avisoEndereco.hidden).toBe(false);
+  });
+
+  it('nao avisa quando o endereco e o de sempre', async () => {
+    const { doc } = await montarPagina({
+      '/api/sessao': { ok: true, status: 200, corpo: { token: 'tok', enderecoEstavel: true } },
+      '/api/estado': { ok: true, status: 200, corpo: { fase: 'pronto' } },
+    });
+    const botao = doc.getElementById('botao') as HTMLButtonElement;
+    const avisoEndereco = doc.getElementById('aviso-endereco') as HTMLElement;
+
+    await ate(() => !botao.disabled);
+
+    expect(avisoEndereco.hidden).toBe(true);
   });
 });

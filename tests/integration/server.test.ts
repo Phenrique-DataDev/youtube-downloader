@@ -4,6 +4,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { iniciarServidor, type ServidorLocal } from '../../src/server/http.ts';
+import { sondarInstancia } from '../../src/lifecycle/instancia.ts';
 
 /**
  * Sobe o servidor de verdade. Nao usa rede externa — so loopback — entao roda
@@ -42,8 +43,17 @@ describe('bind e alcance', () => {
     expect(servidor.url).toContain('127.0.0.1');
   });
 
-  it('a URL de abertura ja carrega o token', () => {
-    expect(servidor.url).toContain(`t=${servidor.token}`);
+  /**
+   * Este teste cobrava o CONTRARIO ate a leva 1 do CICLO_DE_VIDA: a URL
+   * carregava `?t=<token>`. Isso e o que impedia salvar o endereco nos
+   * favoritos — o token muda a cada execucao, entao o link salvo morria junto
+   * com a execucao que o criou. Agora o endereco e limpo e o token vem de
+   * `/api/sessao`.
+   */
+  it('a URL de abertura NAO carrega o token — ela vai para os favoritos', () => {
+    expect(servidor.url).toBe(`http://127.0.0.1:${servidor.porta}/`);
+    expect(servidor.url).not.toContain(servidor.token);
+    expect(servidor.url).not.toContain('t=');
     expect(servidor.token.length).toBeGreaterThanOrEqual(40);
   });
 
@@ -173,6 +183,143 @@ function pedirComHost(
     req.end();
   });
 }
+
+/**
+ * O nucleo da leva 1. O endereco ficou salvavel porque o token saiu da URL —
+ * e o que passou a proteger a API sao camadas que uma pagina de outra origem
+ * nao consegue vencer, verificadas uma a uma aqui.
+ */
+describe('Security — sessao sem token na URL (AT-100, AT-109)', () => {
+  it('/api/sessao entrega o token sem exigir token', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/sessao`, { headers: comHost() });
+
+    expect(r.status).toBe(200);
+    expect((await r.json()).token).toBe(servidor.token);
+  });
+
+  /**
+   * A defesa de `/api/sessao` NAO e credencial: e o navegador recusar entregar
+   * a resposta a script de outra origem. Isso so vale enquanto nao emitirmos
+   * CORS — se algum dia alguem adicionar `Access-Control-Allow-Origin`, o
+   * token vaza e este teste morre primeiro.
+   */
+  it.each(['/', '/api/sessao', '/api/estado', '/api/identidade'])(
+    'nao emite CORS em %s',
+    async (rota) => {
+      const r = await fetch(`http://127.0.0.1:${servidor.porta}${rota}`, {
+        headers: comHost({ 'x-token': servidor.token }),
+      });
+
+      expect(r.headers.get('access-control-allow-origin')).toBeNull();
+      expect(r.headers.get('access-control-allow-credentials')).toBeNull();
+    },
+  );
+
+  it('o token NAO autentica mais pela querystring', async () => {
+    // Era aceito ate a leva 1. Aceitar pela URL devolveria o token ao
+    // historico do browser e ao Referer.
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/estado?t=${servidor.token}`, {
+      headers: comHost(),
+    });
+
+    expect(r.status).toBe(401);
+  });
+
+  it('recusa pedido de outra origem pelo Sec-Fetch-Site', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/sessao`, {
+      headers: comHost({ 'sec-fetch-site': 'cross-site' }),
+    });
+
+    expect(r.status).toBe(403);
+  });
+
+  it('a recusa por procedencia vale mesmo com token valido', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/estado`, {
+      headers: comHost({ 'sec-fetch-site': 'cross-site', 'x-token': servidor.token }),
+    });
+
+    expect(r.status).toBe(403);
+  });
+
+  it('aceita same-origin, que e o caso da propria UI', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/estado`, {
+      headers: comHost({ 'sec-fetch-site': 'same-origin', 'x-token': servidor.token }),
+    });
+
+    expect(r.status).toBe(200);
+  });
+});
+
+/**
+ * AT-100 — o fluxo que motivou a leva inteira. A pessoa salva o link nos
+ * favoritos e reabre dias depois, com o app tendo sido fechado e reaberto no
+ * meio. Antes disto o endereco carregava o token da execucao que o criou, e
+ * portanto NUNCA funcionava na segunda vez.
+ */
+describe('AT-100 — o link salvo sobrevive a nova execucao', () => {
+  it('o mesmo endereco serve uma UI operante em duas execucoes seguidas', async () => {
+    const manipuladores = {
+      sondar: async () => ({}),
+      baixar: async () => ({}),
+      estadoBootstrap: () => ({ fase: 'pronto' }),
+    };
+
+    // 1a execucao: guarda o endereco como a pessoa guardaria no favorito.
+    const primeira = await iniciarServidor(raizUi, manipuladores);
+    const favorito = primeira.url;
+    const tokenAntigo = primeira.token;
+    const porta = primeira.porta;
+    await primeira.fechar();
+
+    // 2a execucao na MESMA porta — e o que acontece quando o app reabre.
+    const segunda = await iniciarServidor(raizUi, manipuladores, porta);
+
+    try {
+      expect(segunda.porta).toBe(porta);
+      // O token mudou (rotaciona por execucao) e o endereco NAO.
+      expect(segunda.token).not.toBe(tokenAntigo);
+      expect(segunda.url).toBe(favorito);
+
+      const cabecalhos = { Host: `127.0.0.1:${porta}` };
+
+      // O favorito abre.
+      const pagina = await fetch(favorito, { headers: cabecalhos });
+      expect(pagina.status).toBe(200);
+
+      // E a UI consegue operar: pega o token atual e usa.
+      const sessao = await fetch(`${favorito}api/sessao`, { headers: cabecalhos });
+      const { token } = await sessao.json();
+      expect(token).toBe(segunda.token);
+
+      const estado = await fetch(`${favorito}api/estado`, {
+        headers: { ...cabecalhos, 'x-token': token },
+      });
+      expect(estado.status).toBe(200);
+      expect(await estado.json()).toEqual({ fase: 'pronto' });
+    } finally {
+      await segunda.fechar();
+    }
+  });
+});
+
+describe('Instancia unica — handshake (AT-101, AT-103)', () => {
+  it('/api/identidade responde o marcador sem exigir token', async () => {
+    // Sem token de proposito: uma execucao nova ainda nao tem nenhum quando
+    // precisa descobrir se ja existe instancia viva.
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/api/identidade`, {
+      headers: comHost(),
+    });
+
+    expect(r.status).toBe(200);
+    const corpo = await r.json();
+    expect(corpo.app).toBe('youtube-downloader');
+    expect(corpo.pid).toBe(process.pid);
+  });
+
+  it('a sonda reconhece um servidor real nosso', async () => {
+    expect(await sondarInstancia(servidor.porta, 1000)).toBe('nossa');
+  });
+});
 
 describe('Security — DNS rebinding', () => {
   it('o cliente cru realmente forja o Host (senao o resto do teste e falso verde)', async () => {

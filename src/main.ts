@@ -24,6 +24,7 @@ import { baixar } from './ytdlp/downloader.ts';
 import { encerrarTodosOsProcessos } from './ytdlp/runner.ts';
 import { iniciarServidor } from './server/http.ts';
 import { caminhoEstaConfinado } from './server/guards.ts';
+import { detectarModo, deveAbrirNavegador, sondarInstancia } from './lifecycle/instancia.ts';
 
 const PORTA_PREFERIDA = 47821;
 
@@ -31,6 +32,27 @@ const caminhos = resolverCaminhos();
 let estado: EstadoBootstrap = { fase: 'verificando' };
 
 async function principal(): Promise<void> {
+  const modo = detectarModo(process.argv);
+
+  // Antes de qualquer coisa: ja existe instancia nossa viva? Subir um segundo
+  // servidor aqui e o que fazia a maquina acumular processos invisiveis.
+  const quem = await sondarInstancia(PORTA_PREFERIDA);
+
+  if (quem === 'nossa') {
+    await registrar('arranque', `modo=${modo} decisao=ceder`);
+    // Cede o lugar — mas quem clicou no atalho pediu para usar o app AGORA, e
+    // sair calado faria o duplo-clique parecer quebrado (desvio do AT-101,
+    // registrado no DESIGN).
+    if (deveAbrirNavegador(modo)) abrirNoBrowser(`http://127.0.0.1:${PORTA_PREFERIDA}/`);
+    process.exit(0);
+  }
+
+  if (quem === 'terceiro') {
+    // Nao e nosso: `escutar` vai cair no fallback de porta, e o link salvo
+    // desta pessoa nao aponta para ca. A UI avisa (via `enderecoEstavel`).
+    await registrar('arranque', `modo=${modo} decisao=porta-alternativa`);
+  }
+
   const raizUi = join(dirname(fileURLToPath(import.meta.url)), 'ui');
 
   const servidor = await iniciarServidor(
@@ -151,8 +173,13 @@ async function principal(): Promise<void> {
     PORTA_PREFERIDA,
   );
 
-  console.log(`Abrindo ${servidor.url}`);
-  abrirNoBrowser(servidor.url);
+  await registrar(
+    'arranque',
+    `modo=${modo} decisao=subir porta=${servidor.porta} estavel=${servidor.enderecoEstavel}`,
+  );
+
+  console.log(`Servindo em ${servidor.url}`);
+  if (deveAbrirNavegador(modo)) abrirNoBrowser(servidor.url);
 
   // Bootstrap em paralelo — a UI ja esta no ar neste ponto.
   prepararDependencias().catch(async (erro: unknown) => {
