@@ -90,14 +90,23 @@ virou o principal vetor de "coisas aparecendo":
 |----------|-----------|
 | Subiu porque a pessoa executou o atalho | **Sim** — ela quer usar agora |
 | Subiu sozinho no login do Windows (autostart ligado) | **Não** — ninguém pediu nada |
-| Execução com o app já rodando | **Não** — encerra em silêncio |
+| Execução com o app já rodando, **modo silencioso** (autostart) | **Não** — ninguém pediu nada |
+| Execução com o app já rodando, **pelo atalho** | **Sim** — ver emenda de 2026-07-22 |
+
+> **Emenda 2026-07-22.** A linha original dizia que qualquer execução com o app já rodando "encerra
+> em silêncio", sem abrir aba. O build da leva 1 divergiu de propósito e a divergência ficou
+> registrada no `BUILD_REPORT`: clicar no atalho **é** o gesto de "quero ver o app agora", e não abrir
+> nada deixaria a pessoa clicando num ícone que não responde — o pior silêncio possível para este
+> público. O que a regra original protegia (não aparecer nada sem ser pedido) continua valendo
+> integralmente no caminho do autostart, que é onde ninguém pediu nada.
 
 ## Success Criteria (mensuráveis)
 
 - [ ] O mesmo link abre a UI funcionando em **3** execuções consecutivas do app, com o navegador
       fechado entre elas — **0** passos manuais do usuário entre uma e outra
 - [ ] Após **5** execuções consecutivas do `.exe`, existe exatamente **1** processo do app vivo e
-      **0** abas foram abertas pelas execuções 2 a 5
+      **0** abas foram abertas pelas execuções 2 a 5 **em modo silencioso** (autostart). Pelo atalho,
+      abrir a aba é o comportamento esperado — ver a emenda de 2026-07-22 acima
 - [ ] Após clicar Encerrar, **0** processos do app e **0** processos filhos (`yt-dlp`/`ffmpeg`)
       permanecem, e a porta `47821` volta a aceitar bind em **< 2 s**
 - [ ] A detecção de instância existente conclui em **< 500 ms** — não pode atrasar perceptivelmente
