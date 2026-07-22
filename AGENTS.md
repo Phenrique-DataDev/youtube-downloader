@@ -51,6 +51,9 @@ consome o artefato da anterior. Detalhes em
 - [`kb-taxonomy.md`](.claude/rules/kb-taxonomy.md) — KB em 4 camadas (`.claude/kb/`)
 - [`project-context.md`](.claude/rules/project-context.md) — stack/convenções deste projeto (`/setup`)
 - [`complementary-repos.md`](.claude/rules/complementary-repos.md) — outros repos como referência read-only (`/complementary-repos`)
+- [`agent-routing-domain.md`](.claude/rules/agent-routing-domain.md) — experts de domínio deste stack (`/audit-agents`)
+- [`orchestration.md`](.claude/rules/orchestration.md) — protocolo do líder: decompor, delegar, validar num gate
+- [`documentation.md`](.claude/rules/documentation.md) — o que registrar em `docs/`, fora da KB (`/document`)
 <!-- sync-context:end:rules -->
 
 > Sumário (1 linha por regra), regenerado por `/sync-context` — a regra é o arquivo, não esta lista.
@@ -101,7 +104,7 @@ curada/agente-facing) e do `inbox/` (insumo que chega).
 ## Domínios da KB
 
 <!-- sync-context:start:kb -->
-_(vazio — povoado por `/train-kb` e indexado por `/sync-context`; ver `.claude/kb/_index.yaml`)_
+- **tools/** — `media` (4 entradas, 0 unverified)
 <!-- sync-context:end:kb -->
 
 ## CLI-first (resumo)
