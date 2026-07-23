@@ -7,8 +7,14 @@
 | **DESIGN** | [DESIGN_CICLO_DE_VIDA.md](../features/DESIGN_CICLO_DE_VIDA.md) |
 | **Leva anterior** | [BUILD_REPORT_CICLO_DE_VIDA.md](BUILD_REPORT_CICLO_DE_VIDA.md) |
 | **Branch** | `feat/ciclo-de-vida-leva2` |
-| **Commits** | `810283e` (implementação), `a164705` (fix do abort + cobertura) |
-| **Status** | ✅ COMPLETE, com 2 lacunas de verificação declaradas abaixo |
+| **Commits** | `810283e` impl · `a164705` fix abort + cobertura · `99fee9e` fix teste empacotamento · `7566ebb` fix árvore + failsafe (SC-3) · `acbdc5f` AT-107 testável |
+| **Status** | ✅ COMPLETE — os 6 Success Criteria verificados (ver seção abaixo) |
+
+> **Atualização 2026-07-23.** Este relatório foi escrito em 22/07 com o build recém-coberto, mas
+> antes da verificação dos Success Criteria contra o `.exe` real. Essa verificação (feita durante o
+> `/ship`) **encontrou dois defeitos** que a suíte não pegava e **tornou o AT-107 testável** — tudo
+> abaixo já reflete o estado corrigido. As duas "lacunas de verificação" que a versão de 22/07
+> declarava (o `setImmediate` e o AT-107) foram **ambas fechadas**.
 
 ---
 
@@ -69,21 +75,24 @@ parâmetro morto de `responderSse` e saiu da assinatura (acusado pelo `tsc`, nã
 
 ```
 $ npm run verify
- Test Files  12 passed (12)
-      Tests  231 passed (231)
+ Test Files  14 passed (14)
+      Tests  239 passed (239)
 
 $ npx vitest run --project integration
  Test Files  2 passed | 1 skipped (3)
       Tests  57 passed | 6 skipped (63)
 
-$ npx prettier --check src tests scripts
+$ npx prettier --check src tests
 All matched files use Prettier code style!
 ```
 
-| Suíte | Leva 1 | Leva 2 |
-|---|---|---|
-| unit | 195 | **231** (+36) |
-| integração | 39 | **57** (+18) |
+| Suíte | Leva 1 | Leva 2 (cobertura) | Leva 2 (+ SC-3/AT-107) |
+|---|---|---|---|
+| unit | 195 | 231 (+36) | **239** (+44) |
+| integração | 39 | 57 (+18) | **57** |
+
+> Os +8 unit finais são os testes de árvore (`encerramento-arvore`, espião do `taskkill`) e do AT-107
+> (`falha-fatal`), escritos durante o `/ship` junto com os fixes de SC-3 e SC-6.
 
 Não-flakiness: 5 rodadas embaralhadas de cada projeto (`--sequence.shuffle`, seeds 11/22/33/44/55),
 contagens estáveis nas dez. Nenhum teste usa `sleep` fixo — a espera é sempre por condição
@@ -137,29 +146,63 @@ parecia truncar no primeiro byte nulo. Não trunca: pela doc do Bun, `cstring` e
 como ponteiro cru** — a coerção para string só vale em `returns`.
 _(fonte: context7, `/oven-sh/bun`, `docs/runtime/ffi.mdx`, verificado 2026-07-22)_
 
+## Verificação dos Success Criteria — contra o `.exe` real
+
+Feita durante o `/ship`, com um binário **reconstruído** (`npm run build`) para conter as duas levas —
+o `.exe` em `dist/` era anterior a elas e mascarava o teste de empacotamento (fix `99fee9e`).
+
+| # | Critério (do DEFINE) | Estado | Evidência |
+|---|----------------------|--------|-----------|
+| 1 | Mesmo link, 3 execuções, 0 passos manuais | ✅ | 3/3 → 200 com 6063 bytes; porta liberada entre elas; subida 315–355 ms |
+| 2 | 5 execuções → 1 processo, **0 abas** (silencioso/autostart) | ✅ | 1 processo, exit 0 nas 4 seguintes. O atalho abrir aba é comportamento especificado — ver emenda ao DEFINE (`5f103f7`) |
+| 3 | Encerrar → 0 processos, **0 filhos `yt-dlp`/`ffmpeg`**, rebind < 2 s | ✅ | Árvore `yt-dlp` (filho + neto) capturada viva; após encerrar: 0 filhos, app morto, rebind em 97 ms |
+| 4 | Detecção < 500 ms (caso comum) | ✅ | 318–355 ms |
+| 5 | Console some < 2 s | ✅ | 4 ms (log do app: `arranque` → `console :: liberado`) |
+| 6 | Falha de arranque com mensagem **persistente**, 0 saídas silenciosas | ✅ | AT-107, agora testável — ver abaixo |
+
+**Os dois defeitos que essa verificação encontrou** (ambos invisíveis à suíte, que usa manipulador
+simulado sem árvore de processos real):
+
+- **Árvore órfã (D1, fix `7566ebb`)** — encerrar matava só o filho direto do `yt-dlp`; o neto (um por
+  formato) sobrevivia baixando. `taskkill /T` passou a derrubar a árvore inteira.
+- **App zumbi (D2, mesmo fix)** — o neto órfão segurava o stdout herdado, travando o `close` do filho e
+  o `fechar()` do app: o processo ficava vivo segurando a porta 47821, o que quebraria o link salvo da
+  próxima execução. Um failsafe (`setTimeout → process.exit`) garante o exit mesmo se `fechar()` travar.
+
+**Método:** a prova do SC-3 exigiu capturar um download em curso — o primeiro par de medições foi
+**falso verde** (os filhos morriam sozinhos porque o vídeo baixava rápido demais), só desmascarado por
+uma prova de estabilidade (10 s sem intervenção) antes do encerrar. A causação — morreram *por causa*
+do encerrar — só ficou provada com a árvore capturada viva, apagando o arquivo cacheado e apertando o
+timing.
+
 ## Acceptance Tests
 
 | AT | Estado | Evidência |
 |----|--------|-----------|
 | AT-104 encerrar | ✅ | `responde 202 integro E SO ENTAO desliga` + porta volta a aceitar bind em < 2 s; 501 sem manipulador; exige token; recusa cross-site |
-| AT-105 encerrar durante download | ✅ | `o AbortSignal do download dispara quando o servidor e encerrado` — morre com M15 |
+| AT-105 encerrar durante download | ✅ | `AbortSignal` dispara (morre com M15) **e** a árvore do yt-dlp é reapada — ver o fix e a prova contra o `.exe` abaixo |
 | AT-106 console some | ✅ | `verificar-console.mjs` sob Bun: `GetConsoleWindow()` não-nulo → `null` |
-| AT-107 falha visível | ⚠️ **parcial** | Só o contrato "nunca lança" sob Node. A chamada nativa real não é exercitada — ver lacunas |
+| AT-107 falha visível | ✅ | `tratarFalhaFatal` com deps injetadas: a caixa é chamada com o texto certo **antes** do `exit(1)` — a ordem morre com a mutação "exit antes de avisar" |
 | AT-110 autostart reversível | ✅ | Ligar → valor existe; desligar → some; estado sempre **relido** do registro (M2, M10) |
+| AT-011 filhos não sobrevivem ao app | ✅ | `taskkill /T` derruba a árvore; unit espião prova a chamada, `.exe` real prova o efeito (neto morto em 433 ms) |
 
 ## Lacunas de verificação — declaradas, não mascaradas
 
-1. **O `setImmediate` de `/api/encerrar` é infalsificável hoje (M9).** Removido, os 57 testes seguem
+1. **O `setImmediate` de `/api/encerrar` é infalsificável hoje (M9).** Removido, os testes seguem
    verdes. Um e2e com `process.exit(0)` real em subprocesso (3 rodadas com, 3 sem) devolveu o
    `202 {"encerrando":true}` íntegro nas seis: um corpo pequeno escoa para o socket antes de o
    processo morrer. A defesa é **correta por intenção** mas não está provada — os comentários dos
    testes foram corrigidos para não reivindicarem cobertura inexistente. **Não contar como coberta.**
-2. **AT-107 não tem prova da chamada nativa.** O DESIGN previa injeção da dependência de UI nativa
-   para verificá-la sem abrir caixa de verdade; o código atual não oferece esse ponto de injeção.
-   Fechar isso é mudança de produção, não de teste — fica como item consciente.
+   É a única defesa desta leva sem prova por mutação.
+
+> **Resolvido desde a versão de 22/07** (não é mais lacuna): o AT-107, que aqui não tinha prova da
+> chamada nativa, foi tornado testável em `acbdc5f` — `tratarFalhaFatal` com deps injetadas prova a
+> ordem caixa-antes-do-exit, e a mutação a mata.
 
 Menores, herdadas da leva 1 e inalteradas: o `abrirNoBrowser` não é testado no *ato* de abrir, e o CI
-não roda nada disto (só `pin-ffmpeg.yml` — item aberto no `backlog.md`).
+não roda nada disto (só `pin-ffmpeg.yml` — item aberto no `backlog.md`). O `taskkill /T` da árvore só
+é exercitado no Windows (o teste espião pula fora dele); a prova ponta-a-ponta contra o `.exe` é
+manual, não roda no CI.
 
 ## Desvios do DESIGN
 
@@ -167,6 +210,7 @@ não roda nada disto (só `pin-ffmpeg.yml` — item aberto no `backlog.md`).
 |--------|---------|
 | Fix do `AbortSignal` em `responderSse` | Fora do escopo declarado da leva, mas o AT-105 não tinha como ser entregue sem ele. O bug atingia também o fechar-a-aba, que nunca funcionou desde o BUILD original |
 | `esconderConsole()` é chamado **depois** do servidor subir | Amarrado de propósito: liberar o console apaga `console.log`/`console.error`. Falha anterior a esse ponto vai para a caixa nativa, que persiste na tela |
+| `taskkill /T` + failsafe de encerramento, e `tratarFalhaFatal` extraído | Fora do escopo declarado da leva 2, mas necessários para entregar SC-3 (árvore órfã + app zumbi) e tornar o AT-107 verificável. Encontrados só ao medir os SC contra o `.exe` real, durante o `/ship` |
 
 ## Correção ao relatório da leva 1
 
