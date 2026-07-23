@@ -105,6 +105,7 @@ curada/agente-facing) e do `inbox/` (insumo que chega).
 
 <!-- sync-context:start:kb -->
 - **tools/** — `media` (4 entradas, 0 unverified)
+- **operations/** — `verificacao` (1 entrada, 0 unverified)
 <!-- sync-context:end:kb -->
 
 ## CLI-first (resumo)
