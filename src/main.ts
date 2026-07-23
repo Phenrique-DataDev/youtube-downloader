@@ -27,6 +27,7 @@ import { caminhoEstaConfinado } from './server/guards.ts';
 import { detectarModo, deveAbrirNavegador, sondarInstancia } from './lifecycle/instancia.ts';
 import { esconderConsole, avisarFalhaFatal } from './lifecycle/console.ts';
 import { autostartLigado, alternarAutostart } from './lifecycle/autostart.ts';
+import { tratarFalhaFatal } from './lifecycle/falha-fatal.ts';
 
 const PORTA_PREFERIDA = 47821;
 
@@ -278,18 +279,13 @@ function abrirNoBrowser(url: string): void {
   filho.unref();
 }
 
-principal().catch(async (erro: unknown) => {
-  const detalhe = erro instanceof Error ? erro.message : String(erro);
-
-  // O `console.error` sozinho nao serve: a janela de console fecha junto com o
-  // processo, entao a mensagem so pisca. E se o console ja tiver sido liberado,
-  // ela nem chega a piscar. Uma caixa nativa espera a pessoa (AT-107).
-  console.error('Falha ao iniciar:', detalhe);
-  await registrar('arranque falhou', detalhe);
-  await avisarFalhaFatal(
-    'youtube-downloader',
-    `Não consegui iniciar o aplicativo.\n\n${detalhe}\n\nTente executar de novo. Se continuar, reinicie o computador.`,
-  );
-
-  process.exit(1);
-});
+// AT-107: a caixa nativa aparece ANTES de o processo morrer. A logica e o texto
+// vivem em `falha-fatal.ts` com as dependencias injetadas, para serem
+// testaveis; aqui so se ligam as versoes de producao.
+principal().catch((erro: unknown) =>
+  tratarFalhaFatal(erro, {
+    avisar: avisarFalhaFatal,
+    registrar,
+    sair: (codigo) => process.exit(codigo),
+  }),
+);
