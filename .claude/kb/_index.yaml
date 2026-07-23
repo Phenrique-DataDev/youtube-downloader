@@ -5,3 +5,7 @@ domains:
     layer: tools
     entries: 4
     unverified: 0
+  verificacao:
+    layer: operations
+    entries: 1
+    unverified: 0

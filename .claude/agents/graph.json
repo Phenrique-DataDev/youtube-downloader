@@ -103,6 +103,24 @@
       "Description": ""
     },
     {
+      "Id": "verificacao",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "CICLO_DE_VIDA",
+      "Type": "Feature",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "DOWNLOADER_LOCAL",
+      "Type": "Feature",
+      "Role": "",
+      "Description": ""
+    },
+    {
       "Id": "max",
       "Type": "Hub",
       "Role": "orchestrator-hub",
@@ -116,6 +134,16 @@
       "Layer": "tools",
       "Domain": "media",
       "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "prova-de-verificacao",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "operations",
+      "Domain": "verificacao",
+      "ContentType": "runbook",
       "Status": "active"
     },
     {
@@ -454,6 +482,21 @@
       "From": "node-packaging",
       "To": "binary-size-budget",
       "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "prova-de-verificacao",
+      "To": "CICLO_DE_VIDA",
+      "Type": "PROMOTED_FROM"
+    },
+    {
+      "From": "prova-de-verificacao",
+      "To": "DOWNLOADER_LOCAL",
+      "Type": "PROMOTED_FROM"
+    },
+    {
+      "From": "prova-de-verificacao",
+      "To": "verificacao",
+      "Type": "IN_DOMAIN"
     },
     {
       "From": "saida-programatica",

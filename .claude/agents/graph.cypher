@@ -1,5 +1,6 @@
 CREATE CONSTRAINT node_agent_name IF NOT EXISTS FOR (n:Agent) REQUIRE n.name IS UNIQUE;
 CREATE CONSTRAINT node_domain_name IF NOT EXISTS FOR (n:Domain) REQUIRE n.name IS UNIQUE;
+CREATE CONSTRAINT node_feature_name IF NOT EXISTS FOR (n:Feature) REQUIRE n.name IS UNIQUE;
 CREATE CONSTRAINT node_hub_name IF NOT EXISTS FOR (n:Hub) REQUIRE n.name IS UNIQUE;
 CREATE CONSTRAINT node_kbentry_name IF NOT EXISTS FOR (n:KbEntry) REQUIRE n.name IS UNIQUE;
 CREATE CONSTRAINT node_skill_name IF NOT EXISTS FOR (n:Skill) REQUIRE n.name IS UNIQUE;
@@ -20,8 +21,12 @@ MERGE (n:Agent {name: 'ytdlp-simulator'}) SET n.role = 'simulation', n.descripti
 MERGE (n:Domain {name: 'github-actions'}) SET n.role = '', n.description = '';
 MERGE (n:Domain {name: 'media'}) SET n.role = '', n.description = '';
 MERGE (n:Domain {name: 'node-packaging'}) SET n.role = '', n.description = '';
+MERGE (n:Domain {name: 'verificacao'}) SET n.role = '', n.description = '';
+MERGE (n:Feature {name: 'CICLO_DE_VIDA'}) SET n.role = '', n.description = '';
+MERGE (n:Feature {name: 'DOWNLOADER_LOCAL'}) SET n.role = '', n.description = '';
 MERGE (n:Hub {name: 'max'}) SET n.role = 'orchestrator-hub', n.description = 'Modo MAX — hub orquestrador-mestre do grafo de agentes (H7)';
 MERGE (n:KbEntry {name: 'autoatualizacao-do-binario'}) SET n.role = '', n.description = '', n.layer = 'tools', n.domain = 'media', n.contenttype = 'reference', n.status = 'active';
+MERGE (n:KbEntry {name: 'prova-de-verificacao'}) SET n.role = '', n.description = '', n.layer = 'operations', n.domain = 'verificacao', n.contenttype = 'runbook', n.status = 'active';
 MERGE (n:KbEntry {name: 'saida-programatica'}) SET n.role = '', n.description = '', n.layer = 'tools', n.domain = 'media', n.contenttype = 'reference', n.status = 'active';
 MERGE (n:KbEntry {name: 'selecao-de-formato'}) SET n.role = '', n.description = '', n.layer = 'tools', n.domain = 'media', n.contenttype = 'pattern', n.status = 'active';
 MERGE (n:KbEntry {name: 'taxonomia-de-erros'}) SET n.role = '', n.description = '', n.layer = 'tools', n.domain = 'media', n.contenttype = 'reference', n.status = 'active';
@@ -80,6 +85,9 @@ MATCH (a {name: 'media-pipeline-specialist'}), (b {name: 'code-reviewer'}) MERGE
 MATCH (a {name: 'media-pipeline-specialist'}), (b {name: 'debugger'}) MERGE (a)-[:CONNECTS_TO]->(b);
 MATCH (a {name: 'media-pipeline-specialist'}), (b {name: 'ytdlp-simulator'}) MERGE (a)-[:CONNECTS_TO]->(b);
 MATCH (a {name: 'node-packaging'}), (b {name: 'binary-size-budget'}) MERGE (a)-[:PRESUPPOSES]->(b);
+MATCH (a {name: 'prova-de-verificacao'}), (b {name: 'CICLO_DE_VIDA'}) MERGE (a)-[:PROMOTED_FROM]->(b);
+MATCH (a {name: 'prova-de-verificacao'}), (b {name: 'DOWNLOADER_LOCAL'}) MERGE (a)-[:PROMOTED_FROM]->(b);
+MATCH (a {name: 'prova-de-verificacao'}), (b {name: 'verificacao'}) MERGE (a)-[:IN_DOMAIN]->(b);
 MATCH (a {name: 'saida-programatica'}), (b {name: 'media'}) MERGE (a)-[:IN_DOMAIN]->(b);
 MATCH (a {name: 'saida-programatica'}), (b {name: 'selecao-de-formato'}) MERGE (a)-[:RELATED_TO]->(b);
 MATCH (a {name: 'saida-programatica'}), (b {name: 'taxonomia-de-erros'}) MERGE (a)-[:RELATED_TO]->(b);
