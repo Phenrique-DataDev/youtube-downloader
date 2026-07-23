@@ -22,7 +22,11 @@ const raizProjeto = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dirUi = join(raizProjeto, 'src', 'ui');
 const saida = join(dirUi, 'ativos.gerado.ts');
 
-const arquivos = (await readdir(dirUi)).filter((n) => /\.(html|css|js)$/.test(n));
+// O `.svg` entra aqui porque o favicon e servido pelo mesmo caminho estatico da
+// UI: fora deste filtro ele nao vai para o mapa embutido e o `.exe` responde 404
+// para `/favicon.svg` — falha invisivel no desenvolvimento, onde o fallback de
+// disco cobre a ausencia. `TIPOS_MIME` (src/server/http.ts) ja mapeia a extensao.
+const arquivos = (await readdir(dirUi)).filter((n) => /\.(html|css|js|svg)$/.test(n));
 
 if (arquivos.length === 0) {
   console.error(`FALHOU: nenhum arquivo de UI em ${dirUi}.`);

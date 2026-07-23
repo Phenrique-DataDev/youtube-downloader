@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Baixar do YouTube">
+  <!-- Copia deliberada de site/favicon.svg, pelo mesmo motivo que app.css duplica
+       os tokens da landing: as duas superficies sao servidas por origens
+       diferentes (binario local x Pages) e nao ha build step para compartilhar
+       um arquivo. Ao mexer no simbolo aqui, mexa la tambem.
+
+       Fundo carvao #0d0d0d, acento laranja #ff4b2b (os nomes das custom
+       properties nao cabem no comentario: XML nao aceita hifen duplo). Tracos de
+       3px no viewBox de 32 (~1,5px a 16px) para o simbolo nao sumir na aba. -->
+  <rect width="32" height="32" rx="7" fill="#0d0d0d" />
+  <g
+    fill="none"
+    stroke="#ff4b2b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M16 7v12" />
+    <path d="M10.5 14.5 16 20l5.5-5.5" />
+    <path d="M8.5 25h15" />
+  </g>
+</svg>
