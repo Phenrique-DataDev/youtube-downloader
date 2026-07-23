@@ -77,9 +77,24 @@ describe('bind e alcance', () => {
   });
 
   /**
+   * O favicon so chega ao usuario se TRES coisas concordarem: o filtro de
+   * `gerar-ativos.mjs` (que ate 2026-07-23 aceitava so html/css/js), o mapa
+   * embutido e o `TIPOS_MIME`. `raizUi` aqui e um temp dir que NAO tem o
+   * arquivo, entao um 200 aqui so pode ter vindo do mapa — que e o unico
+   * caminho que existe dentro do `.exe`.
+   */
+  it('serve o favicon a partir do mapa embutido, com o MIME de SVG', async () => {
+    const r = await fetch(`http://127.0.0.1:${servidor.porta}/favicon.svg`, { headers: comHost() });
+    expect(r.status).toBe(200);
+    expect(r.headers.get('content-type')).toBe('image/svg+xml');
+    expect(await r.text()).toContain('<svg');
+  });
+
+  /**
    * O fallback de disco nao morreu — so deixou de valer para os nomes que o
-   * build embute (`index.html`, `app.css`, `app.js`). Este arquivo nao esta no
-   * mapa, entao exercita o unico caminho em que `raizUi` ainda decide algo.
+   * build embute (`index.html`, `app.css`, `app.js`, `favicon.svg`). Este
+   * arquivo nao esta no mapa, entao exercita o unico caminho em que `raizUi`
+   * ainda decide algo.
    */
   it('cai no disco para arquivo que o build nao embute', async () => {
     await writeFile(join(raizUi, 'extra.txt'), 'vindo-do-disco');
