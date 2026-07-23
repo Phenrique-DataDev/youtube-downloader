@@ -23,6 +23,24 @@ export function hostEhPermitido(host: string | undefined, porta: number): boolea
 }
 
 /**
+ * Procedencia do pedido, pelo header `Sec-Fetch-Site`.
+ *
+ * O browser preenche este header sozinho e JS de pagina NAO consegue forja-lo
+ * (e forbidden header name). Ele existe aqui como camada independente: se um
+ * dia a ausencia de CORS deixar de bastar para esconder o token de
+ * `/api/sessao`, esta checagem ainda barra o pedido de terceiro.
+ *
+ * Ausente => permitido. Quem nao e browser (a sonda de instancia, um curl)
+ * simplesmente nao manda o header, e nenhum deles e o vetor de CSRF que isto
+ * barra — o vetor e uma PAGINA aberta no browser da propria pessoa.
+ */
+export function procedenciaEhPermitida(secFetchSite: string | undefined): boolean {
+  if (secFetchSite === undefined) return true;
+
+  return secFetchSite.toLowerCase().trim() !== 'cross-site';
+}
+
+/**
  * Comparacao de token em tempo constante. Comparar com `===` vazaria o token
  * por timing — a diferenca e pequena, mas o custo de fazer certo e zero.
  */

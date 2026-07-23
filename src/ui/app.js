@@ -1,12 +1,18 @@
 /**
  * UI local. Sem framework e sem build: e servido como esta.
  *
- * O token de sessao chega na querystring da URL que o app abriu e vai em todas
- * as chamadas de API. Sem ele o servidor responde 401 — e o que impede uma
- * pagina qualquer aberta no browser de disparar downloads (CSRF local).
+ * O token de sessao NAO vem mais da URL — ele e buscado em `/api/sessao` logo
+ * ao carregar. Isso e o que torna o endereco salvavel nos favoritos: o token
+ * muda a cada execucao do app, entao um link que o carregasse morreria junto
+ * com a execucao que o criou.
+ *
+ * O que protege `/api/sessao` nao e credencial: o servidor nao emite CORS,
+ * entao o navegador entrega esta resposta ao nosso script e recusa entrega-la
+ * ao de outra origem. Sem o token, `x-token` nao pode ser montado — e header
+ * customizado cross-origin ainda esbarraria no preflight.
  */
 
-const TOKEN = new URLSearchParams(location.search).get('t') ?? '';
+let TOKEN = '';
 
 const el = (id) => document.getElementById(id);
 
@@ -36,6 +42,9 @@ const detalhesErro = el('erro-detalhes');
 const caixaDetalhesErro = el('erro-detalhes-caixa');
 const avisoPreparo = el('aviso-preparo');
 const avisoPreparoTexto = el('aviso-preparo-texto');
+const avisoEndereco = el('aviso-endereco');
+const alternadorAutostart = el('autostart');
+const botaoEncerrar = el('encerrar');
 
 let sondando = false;
 let baixando = false;
@@ -83,6 +92,82 @@ async function acompanharBootstrap() {
     await esperar(500);
   }
 }
+
+/**
+ * Busca o token da execucao ATUAL antes de qualquer outra chamada — sem ele
+ * toda rota de API responde 401.
+ */
+async function abrirSessao() {
+  const resposta = await fetch('/api/sessao');
+  if (!resposta.ok) throw new ErroHttp(resposta.status);
+  return resposta.json();
+}
+
+async function iniciar() {
+  let sessao;
+  try {
+    sessao = await abrirSessao();
+  } catch {
+    // Sem sessao nao ha UI utilizavel. Falhar aqui em silencio devolveria a
+    // tela morta que este ciclo veio eliminar.
+    pararCom('Não estou conseguindo falar com o app. Ele ainda está aberto?');
+    return;
+  }
+
+  TOKEN = sessao.token;
+  if (sessao.enderecoEstavel === false) avisoEndereco.hidden = false;
+
+  await sincronizarAutostart();
+  await acompanharBootstrap();
+}
+
+/* --------------------------------------------------- encerrar e autostart */
+
+/**
+ * O checkbox reflete o REGISTRO, nao o clique. Marcar sozinho e depois
+ * descobrir que a gravacao falhou seria mentir sobre o estado da maquina da
+ * pessoa.
+ */
+async function sincronizarAutostart() {
+  try {
+    const { ligado } = await chamar('/api/autostart');
+    alternadorAutostart.checked = ligado === true;
+    alternadorAutostart.disabled = false;
+  } catch {
+    // Sem suporte (501) ou falha: some com o controle em vez de deixar um
+    // interruptor que nao interrompe nada.
+    alternadorAutostart.closest('.alternador').hidden = true;
+  }
+}
+
+alternadorAutostart.addEventListener('change', async () => {
+  const desejado = alternadorAutostart.checked;
+  alternadorAutostart.disabled = true;
+  try {
+    const { ligado } = await chamar('/api/autostart', { ligado: desejado });
+    alternadorAutostart.checked = ligado === true;
+  } catch {
+    // Volta ao que era: o pedido nao teve efeito.
+    alternadorAutostart.checked = !desejado;
+  } finally {
+    alternadorAutostart.disabled = false;
+  }
+});
+
+botaoEncerrar.addEventListener('click', async () => {
+  // Um download em curso morre junto — perguntar antes e o minimo, porque o
+  // trabalho perdido nao volta.
+  if (baixando && !window.confirm('Há um download em andamento. Encerrar mesmo assim?')) return;
+
+  botaoEncerrar.disabled = true;
+  try {
+    await chamar('/api/encerrar', {});
+  } catch {
+    // O servidor pode morrer antes de a resposta chegar — isso e sucesso, nao
+    // falha. O que decide e a UI parar de falar com ele.
+  }
+  pararCom('Aplicativo encerrado. Pode fechar esta aba.');
+});
 
 /**
  * Estado terminal: mensagem fixa, sem spinner e sem botao. Distinto do aviso
@@ -485,4 +570,4 @@ function formatarTempo(segundos) {
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
-acompanharBootstrap();
+iniciar();

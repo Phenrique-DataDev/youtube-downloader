@@ -144,6 +144,50 @@ body::before {
   color: var(--texto-suave);
 }
 
+/* ---- rodape do app: sair e autostart ---- */
+
+/* Discreto de proposito: estas acoes existem para serem ACHADAS quando
+   procuradas, nao para competir com o botao de baixar. */
+.rodape-app {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  flex-wrap: wrap;
+  margin-top: var(--e5);
+  padding-top: var(--e3);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  font-size: 0.8125rem;
+  color: var(--texto-suave);
+}
+
+.alternador {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  cursor: pointer;
+}
+
+.botao-discreto {
+  background: none;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: var(--raio);
+  padding: var(--e2) var(--e3);
+  color: var(--texto-suave);
+  font: inherit;
+  cursor: pointer;
+}
+
+.botao-discreto:hover:not(:disabled) {
+  color: var(--texto);
+  border-color: rgb(255 255 255 / 28%);
+}
+
+.botao-discreto:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* Estado terminal: nao ha trabalho em curso, entao o spinner sai. Deixa-lo
    girando prometeria que algo ainda vai acontecer. */
 .aviso-parado .girando {

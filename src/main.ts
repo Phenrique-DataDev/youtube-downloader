@@ -24,6 +24,10 @@ import { baixar } from './ytdlp/downloader.ts';
 import { encerrarTodosOsProcessos } from './ytdlp/runner.ts';
 import { iniciarServidor } from './server/http.ts';
 import { caminhoEstaConfinado } from './server/guards.ts';
+import { detectarModo, deveAbrirNavegador, sondarInstancia } from './lifecycle/instancia.ts';
+import { esconderConsole, avisarFalhaFatal } from './lifecycle/console.ts';
+import { autostartLigado, alternarAutostart } from './lifecycle/autostart.ts';
+import { tratarFalhaFatal } from './lifecycle/falha-fatal.ts';
 
 const PORTA_PREFERIDA = 47821;
 
@@ -31,12 +35,44 @@ const caminhos = resolverCaminhos();
 let estado: EstadoBootstrap = { fase: 'verificando' };
 
 async function principal(): Promise<void> {
+  const modo = detectarModo(process.argv);
+
+  // Antes de qualquer coisa: ja existe instancia nossa viva? Subir um segundo
+  // servidor aqui e o que fazia a maquina acumular processos invisiveis.
+  const quem = await sondarInstancia(PORTA_PREFERIDA);
+
+  if (quem === 'nossa') {
+    await registrar('arranque', `modo=${modo} decisao=ceder`);
+    // Cede o lugar — mas quem clicou no atalho pediu para usar o app AGORA, e
+    // sair calado faria o duplo-clique parecer quebrado (desvio do AT-101,
+    // registrado no DESIGN).
+    if (deveAbrirNavegador(modo)) abrirNoBrowser(`http://127.0.0.1:${PORTA_PREFERIDA}/`);
+    process.exit(0);
+  }
+
+  if (quem === 'terceiro') {
+    // Nao e nosso: `escutar` vai cair no fallback de porta, e o link salvo
+    // desta pessoa nao aponta para ca. A UI avisa (via `enderecoEstavel`).
+    await registrar('arranque', `modo=${modo} decisao=porta-alternativa`);
+  }
+
   const raizUi = join(dirname(fileURLToPath(import.meta.url)), 'ui');
 
   const servidor = await iniciarServidor(
     raizUi,
     {
       estadoBootstrap: () => estado,
+
+      encerrar: () => void encerrar(),
+
+      autostart: {
+        ler: () => autostartLigado(),
+        // `process.execPath` e o proprio `.exe` empacotado em producao. Em
+        // desenvolvimento aponta para o node, e ligar o autostart nao faria
+        // sentido — mas tambem nao quebra: quem roda `npm run dev` nao usa
+        // este botao.
+        alternar: (desejado: boolean) => alternarAutostart(desejado, process.execPath),
+      },
 
       sondar: async (url: string) => {
         // Camada 1: validacao local. Nenhum subprocesso e disparado se a URL
@@ -151,8 +187,20 @@ async function principal(): Promise<void> {
     PORTA_PREFERIDA,
   );
 
-  console.log(`Abrindo ${servidor.url}`);
-  abrirNoBrowser(servidor.url);
+  await registrar(
+    'arranque',
+    `modo=${modo} decisao=subir porta=${servidor.porta} estavel=${servidor.enderecoEstavel}`,
+  );
+
+  console.log(`Servindo em ${servidor.url}`);
+
+  // SO AGORA a janela some. Antes daqui qualquer falha ainda precisa de um
+  // lugar para aparecer — depois daqui, `console.log` nao vai a lugar nenhum
+  // (ver o cabecalho de lifecycle/console.ts).
+  const escondeu = await esconderConsole();
+  await registrar('console', escondeu ? 'liberado' : 'permanece visivel');
+
+  if (deveAbrirNavegador(modo)) abrirNoBrowser(servidor.url);
 
   // Bootstrap em paralelo — a UI ja esta no ar neste ponto.
   prepararDependencias().catch(async (erro: unknown) => {
@@ -164,7 +212,17 @@ async function principal(): Promise<void> {
   const encerrar = async () => {
     // AT-011: nenhum processo filho sobrevive ao app.
     encerrarTodosOsProcessos();
+
+    // Failsafe: encerrar e irreversivel por natureza, e travar TENTANDO
+    // encerrar e o pior resultado possivel — um processo zumbi segurando a
+    // porta 47821 quebra o link salvo da proxima execucao (ela sonda a porta,
+    // acha algo que nao responde e cai no fallback), e o publico-alvo nao vai
+    // ao Gerenciador de Tarefas. Se `fechar()` nao resolver a tempo, saimos
+    // assim mesmo.
+    const prazoFatal = setTimeout(() => process.exit(0), 2000);
+
     await servidor.fechar();
+    clearTimeout(prazoFatal);
     process.exit(0);
   };
 
@@ -221,7 +279,13 @@ function abrirNoBrowser(url: string): void {
   filho.unref();
 }
 
-principal().catch((erro: unknown) => {
-  console.error('Falha ao iniciar:', erro);
-  process.exit(1);
-});
+// AT-107: a caixa nativa aparece ANTES de o processo morrer. A logica e o texto
+// vivem em `falha-fatal.ts` com as dependencias injetadas, para serem
+// testaveis; aqui so se ligam as versoes de producao.
+principal().catch((erro: unknown) =>
+  tratarFalhaFatal(erro, {
+    avisar: avisarFalhaFatal,
+    registrar,
+    sair: (codigo) => process.exit(codigo),
+  }),
+);

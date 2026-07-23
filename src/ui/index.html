@@ -20,6 +20,15 @@
         <span id="aviso-preparo-texto">Preparando na primeira execução…</span>
       </div>
 
+      <!-- So aparece quando o app teve de subir noutra porta: o link salvo da
+           pessoa aponta para a de sempre e nao chegaria aqui. Dizer isso agora
+           evita que o favorito pareca ter quebrado sozinho. -->
+      <div id="aviso-endereco" class="aviso aviso-parado" hidden>
+        <span id="aviso-endereco-texto"
+          >O endereço de sempre estava ocupado, então este link vale só para esta sessão.</span
+        >
+      </div>
+
       <form id="formulario" class="formulario" autocomplete="off">
         <label class="campo">
           <span class="rotulo">Link do vídeo</span>
@@ -81,6 +90,16 @@
              mentir PARA SEMPRE quando ela nunca chegava (token expirado). -->
         <button id="botao" type="submit" class="botao" disabled>Baixar</button>
       </form>
+
+      <!-- O gesto de sair vive onde a pessoa esta olhando. Com a janela de
+           console escondida, sem isto so restaria o Gerenciador de Tarefas. -->
+      <div class="rodape-app">
+        <label class="alternador">
+          <input id="autostart" type="checkbox" />
+          <span>Iniciar junto com o Windows</span>
+        </label>
+        <button id="encerrar" type="button" class="botao-discreto">Encerrar o aplicativo</button>
+      </div>
 
       <section id="painel" class="painel" hidden aria-live="polite">
         <div id="info" class="info" hidden>

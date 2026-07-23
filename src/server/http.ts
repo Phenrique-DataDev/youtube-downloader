@@ -10,7 +10,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { randomBytes } from 'node:crypto';
 import { obterAtivo } from '../ui/ativos.ts';
 import { extname } from 'node:path';
-import { hostEhPermitido, tokenConfere } from './guards.ts';
+import { hostEhPermitido, tokenConfere, procedenciaEhPermitida } from './guards.ts';
+import { MARCADOR } from '../lifecycle/instancia.ts';
 
 export interface ManipuladoresApi {
   sondar: (url: string) => Promise<unknown>;
@@ -20,12 +21,25 @@ export interface ManipuladoresApi {
     sinal: AbortSignal,
   ) => Promise<unknown>;
   estadoBootstrap: () => unknown;
+  /** Desliga o app. Opcional: o servidor de teste nao precisa encerrar nada. */
+  encerrar?: () => void;
+  /** Le e alterna o "iniciar com o Windows". Opcional pelo mesmo motivo. */
+  autostart?: {
+    ler: () => Promise<boolean>;
+    alternar: (desejado: boolean) => Promise<boolean>;
+  };
 }
 
 export interface ServidorLocal {
   porta: number;
   token: string;
   url: string;
+  /**
+   * True quando subimos na porta preferida — a que o link salvo aponta. False
+   * significa que caimos no fallback e o favorito da pessoa NAO leva a este
+   * processo; a UI precisa dizer isso, senao o link so "para de funcionar".
+   */
+  enderecoEstavel: boolean;
   fechar: () => Promise<void>;
 }
 
@@ -47,7 +61,15 @@ export async function iniciarServidor(
   const token = randomBytes(32).toString('base64url');
 
   const servidor = createServer((req, res) => {
-    tratar(req, res, { raizUi, api, token, porta: () => porta }).catch((erro: unknown) => {
+    const ctx: Contexto = {
+      raizUi,
+      api,
+      token,
+      porta: () => porta,
+      enderecoEstavel: () => portaPreferida === 0 || porta === portaPreferida,
+    };
+
+    tratar(req, res, ctx).catch((erro: unknown) => {
       if (res.headersSent) {
         res.end();
         return;
@@ -69,7 +91,11 @@ export async function iniciarServidor(
   return {
     porta,
     token,
-    url: `http://127.0.0.1:${porta}/?t=${token}`,
+    // SEM o token: este endereco vai para os favoritos da pessoa e precisa
+    // sobreviver a proxima execucao, que gera outro token. Quem entrega o
+    // token e `/api/sessao`, depois que a pagina carrega.
+    url: `http://127.0.0.1:${porta}/`,
+    enderecoEstavel: portaPreferida === 0 || porta === portaPreferida,
     fechar: () =>
       new Promise<void>((resolver) => {
         servidor.close(() => resolver());
@@ -120,6 +146,7 @@ interface Contexto {
   api: ManipuladoresApi;
   token: string;
   porta: () => number;
+  enderecoEstavel: () => boolean;
 }
 
 async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto): Promise<void> {
@@ -144,12 +171,40 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
     return;
   }
 
-  // Toda rota de API exige o token.
+  // Procedencia antes de qualquer rota de API, inclusive as sem token: uma
+  // pagina de outra origem nao tem o que fazer aqui nem para perguntar quem
+  // somos. JS nao consegue forjar este header.
+  const procedencia = req.headers['sec-fetch-site'];
+  if (!procedenciaEhPermitida(Array.isArray(procedencia) ? procedencia[0] : procedencia)) {
+    responderJson(res, 403, { erro: 'Procedencia nao permitida' });
+    return;
+  }
+
+  // Identidade responde SEM token: e o handshake que uma execucao nova usa
+  // para descobrir que ja existe instancia viva — nesse momento ela ainda nao
+  // tem token nenhum. Nao expoe nada que quem ja esta na maquina nao veja
+  // listando processos.
+  if (rota === '/api/identidade') {
+    responderJson(res, 200, { app: MARCADOR, pid: process.pid });
+    return;
+  }
+
+  // A sessao tambem responde sem token — ela e como o token chega a pagina.
+  // O que a protege NAO e credencial: e o navegador recusar entregar esta
+  // resposta a script de outra origem, porque nao emitimos CORS. Ver o DESIGN.
+  if (rota === '/api/sessao') {
+    responderJson(res, 200, { token: ctx.token, enderecoEstavel: ctx.enderecoEstavel() });
+    return;
+  }
+
+  // As demais exigem o token, e SO pelo header. Aceita-lo tambem pela
+  // querystring (como era ate aqui) devolveria o token a URL — logo ao
+  // historico do browser e ao `Referer` — que e exatamente o que este ciclo
+  // veio fechar.
   const recebido = req.headers['x-token'];
   const doHeader = Array.isArray(recebido) ? recebido[0] : recebido;
-  const doQuery = url.searchParams.get('t') ?? undefined;
 
-  if (!tokenConfere(doHeader ?? doQuery, ctx.token)) {
+  if (!tokenConfere(doHeader, ctx.token)) {
     responderJson(res, 401, { erro: 'Token invalido' });
     return;
   }
@@ -172,7 +227,40 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
 
     case '/api/baixar': {
       const corpo = await lerJson(req);
-      await responderSse(req, res, ctx.api, corpo);
+      await responderSse(res, ctx.api, corpo);
+      return;
+    }
+
+    case '/api/autostart': {
+      if (ctx.api.autostart === undefined) {
+        responderJson(res, 501, { erro: 'Autostart indisponivel' });
+        return;
+      }
+
+      if (req.method !== 'POST') {
+        responderJson(res, 200, { ligado: await ctx.api.autostart.ler() });
+        return;
+      }
+
+      const corpo = (await lerJson(req)) as { ligado?: unknown };
+      // Estado RELIDO do registro, nunca o pedido: se o `reg.exe` falhar, a UI
+      // tem de mostrar o que ficou gravado, e nao confirmar o que nao houve.
+      responderJson(res, 200, { ligado: await ctx.api.autostart.alternar(corpo.ligado === true) });
+      return;
+    }
+
+    case '/api/encerrar': {
+      if (ctx.api.encerrar === undefined) {
+        responderJson(res, 501, { erro: 'Encerramento indisponivel' });
+        return;
+      }
+
+      // Responde ANTES de desligar: encerrar primeiro deixaria o navegador com
+      // um pedido pendente e a pessoa sem confirmacao de que funcionou.
+      responderJson(res, 202, { encerrando: true });
+      // `setImmediate` da a resposta a chance de sair pelo socket. Chamar
+      // `encerrar()` aqui mesmo abortaria a propria confirmacao.
+      setImmediate(() => ctx.api.encerrar?.());
       return;
     }
 
@@ -186,7 +274,6 @@ async function tratar(req: IncomingMessage, res: ServerResponse, ctx: Contexto):
  * cancela o download — fechar a aba nao deixa o yt-dlp rodando sozinho.
  */
 async function responderSse(
-  req: IncomingMessage,
   res: ServerResponse,
   api: ManipuladoresApi,
   corpo: unknown,
@@ -199,7 +286,12 @@ async function responderSse(
   });
 
   const controlador = new AbortController();
-  req.on('close', () => controlador.abort());
+  // `res`, nao `req`: quando chegamos aqui o corpo do pedido ja foi consumido
+  // por `lerJson(req)`, entao o `IncomingMessage` ja esta destruido e um
+  // listener nele espera um evento que ja passou — o abort nunca dispararia.
+  // O `res` continua aberto enquanto o SSE dura, que e exatamente a janela em
+  // que queremos saber se a pessoa foi embora.
+  res.on('close', () => controlador.abort());
 
   const emitir = (evento: string, dado: unknown) => {
     if (res.writableEnded) return;

@@ -16,14 +16,27 @@
 
 ## Requisitos que moldam tudo
 
-Restrições fixas, definidas no `/setup` — qualquer decisão de arquitetura precisa respeitá-las:
+Restrições fixas — qualquer decisão de arquitetura precisa respeitá-las. Revisadas em **2026-07-21**,
+quando o alcance pretendido foi esclarecido (ver *Público-alvo* logo abaixo):
 
 | Requisito | Consequência |
 |-----------|--------------|
-| **Público** — qualquer pessoa abre o link e usa | Não pode exigir conta, token próprio ou setup do usuário |
-| **Sem instalação** — roda no browser | Descarta app local/CLI como entrega principal |
-| **Custo zero** — sem servidor pago | Restringe a free tiers e a compute do próprio GitHub |
+| **Poucas pessoas conhecidas**, sem experiência em programação | Não pode exigir conta nem setup; mas **não** precisa aguentar escala nem uso anônimo em massa |
+| **Fluxo de link salvo** — depois da 1ª execução, abrir o favorito e usar | O endereço da UI precisa ser **estável entre execuções**; nada que expire sozinho no caminho feliz |
+| **Nada aparecendo sem ser pedido** — sem janelas nem abas surgindo | O app não pode abrir navegador em toda subida, nem deixar janela de console visível |
+| **Custo zero** — sem servidor pago | Restringe a free tiers e à compute do próprio GitHub |
 | **Vídeo ou áudio, selecionável** | Precisa de transcodificação/extração (ffmpeg), não só download bruto |
+| ~~**Sem instalação** — roda no browser~~ | **Cedida em 2026-07-20** — ver *Arquitetura* abaixo: o download precisa sair de um IP residencial |
+
+### Público-alvo — esclarecido em 2026-07-21
+
+O `/setup` registrou *"público — qualquer pessoa abre o link e usa"*. Isso **não** descreve a
+intenção: o alvo é um **grupo pequeno e conhecido**, com pouca ou nenhuma experiência técnica.
+
+A diferença não é cosmética. Ela **relaxa** a preocupação com abuso e escala (não há serviço anônimo
+exposto a automação em massa) e **aperta** a exigência de fluxo amigável: quem usa não vai
+diagnosticar uma janela de console, um link que expirou ou um processo esquecido rodando. Onde a
+escolha for entre robustez a escala e simplicidade de uso, **vale a simplicidade**.
 
 ## Stack
 
@@ -51,12 +64,20 @@ Análise completa, alternativas e fontes: [`BRAINSTORM_ARQUITETURA_ENTREGA.md`](
 
 ## Riscos transversais a considerar no brainstorm
 
-- **Abuso**: serviço público e anônimo de download é alvo de automação em massa — custo zero e
-  ausência de rate limit são incompatíveis.
-- **ToS / legal**: baixar do YouTube conflita com os Termos de Serviço da plataforma; um serviço
-  público exposto tem superfície diferente de uma ferramenta pessoal.
+> Revisados em 2026-07-21 junto com o público-alvo. Dois deles encolheram bastante ao deixar de
+> ser um serviço público e anônimo — registrar isso evita continuar projetando contra um risco
+> que o produto não corre mais.
+
+- ~~**Abuso**~~ → **baixo**. O app roda na máquina de cada pessoa, o grupo é pequeno e conhecido, e
+  não há endpoint compartilhado exposto. Não há o que sofrer automação em massa. Rate limit deixa
+  de ser requisito.
+- **ToS / legal**: baixar do YouTube conflita com os Termos de Serviço da plataforma. A superfície
+  é a de uma ferramenta usada por poucos indivíduos, não a de um serviço público em nome do autor
+  — mas o conflito com os ToS **não desaparece** por ser pequeno.
 - **Fragilidade do `yt-dlp`**: quebra com frequência quando o YouTube muda; exige estratégia de
-  atualização da dependência.
+  atualização da dependência. **Inalterado** — independe do tamanho do público.
+- **Usuário não-técnico** (novo): qualquer falha precisa se explicar sozinha na tela. Não há a quem
+  recorrer, e ninguém vai ler log nem console. Erro silencioso é o pior modo de falha deste produto.
 
 ## Convenções de código
 

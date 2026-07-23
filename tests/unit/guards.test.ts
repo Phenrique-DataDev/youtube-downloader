@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { hostEhPermitido, tokenConfere, caminhoEstaConfinado } from '../../src/server/guards.ts';
+import {
+  hostEhPermitido,
+  tokenConfere,
+  caminhoEstaConfinado,
+  procedenciaEhPermitida,
+} from '../../src/server/guards.ts';
 
 describe('DNS rebinding — validacao do header Host', () => {
   const PORTA = 47821;
@@ -90,4 +95,32 @@ describe('path traversal no destino', () => {
   it.each(escapes)('rejeita %s', (alvo) => {
     expect(caminhoEstaConfinado(alvo, RAIZ)).toBe(false);
   });
+});
+
+/**
+ * `Sec-Fetch-Site` e a camada que sobra caso a ausencia de CORS deixe de
+ * bastar para esconder o token de /api/sessao. JS de pagina nao consegue
+ * forjar este header — e forbidden header name.
+ */
+describe('procedenciaEhPermitida', () => {
+  it('ausente e permitido — quem nao e browser nao manda o header', () => {
+    // A propria sonda de instancia (node fetch) cai aqui. Barrar a ausencia
+    // quebraria o handshake sem barrar atacante nenhum: o vetor e uma PAGINA.
+    expect(procedenciaEhPermitida(undefined)).toBe(true);
+  });
+
+  it.each(['same-origin', 'same-site', 'none'])('permite %s', (valor) => {
+    expect(procedenciaEhPermitida(valor)).toBe(true);
+  });
+
+  it('recusa cross-site', () => {
+    expect(procedenciaEhPermitida('cross-site')).toBe(false);
+  });
+
+  it.each(['CROSS-SITE', ' cross-site ', 'Cross-Site'])(
+    'recusa %s (caixa e espaco nao contornam)',
+    (valor) => {
+      expect(procedenciaEhPermitida(valor)).toBe(false);
+    },
+  );
 });

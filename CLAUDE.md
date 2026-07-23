@@ -29,7 +29,7 @@ Cada fase do SDD tem um command dedicado e **auto-contido** (carrega a própria 
 | `/skill-gap` | — | Fechar lacuna de skill: detecta capacidade pressuposta pelas ondas e gera a skill faltante |
 | `/update-skills` | — | Higiene das skills: inventaria, diagnostica e atualiza os 2 escopos, com backup antes de escrever |
 | `/supplements` | — | Repertório de suplementos: lista skills/plugins validados por tema e instala o escolhido (opt-in, user scope) |
-| `/init` | — | Especializar o scaffold: orquestra `/setup`?→`/audit-agents`→`/train-kb`→`/sync-context` |
+| `/init` | — | Especializar o scaffold: orquestra `/setup`→`/audit-agents`→`/train-kb`→`/sync-context` |
 | `/adapt` | — | Adotar projeto existente (brownfield): detecta stack+higiene e delega ao `/init` |
 | `/dev` | — | Dev Loop: tarefa pequena sem SDD completo |
 | `/review` | — | Revisar PR ou diff |

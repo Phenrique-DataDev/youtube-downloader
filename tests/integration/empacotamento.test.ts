@@ -54,7 +54,12 @@ describe.skipIf(!temBinario)('binario empacotado', () => {
         30_000,
       );
       processo.stdout?.on('data', (pedaco: Buffer) => {
-        const achado = /http:\/\/127\.0\.0\.1:\d+\/\?t=[\w-]+/.exec(pedaco.toString());
+        // SEM `?t=`: a leva 1 do ciclo de vida tirou o token da URL para que o
+        // endereco pudesse ir aos favoritos e sobreviver a proxima execucao.
+        // Esta regex cobrava o token ate 2026-07-22 e so passava porque o
+        // binario em `dist/` era anterior aquela mudanca — binario velho
+        // concordando com teste velho.
+        const achado = /http:\/\/127\.0\.0\.1:\d+\//.exec(pedaco.toString());
         if (achado) {
           clearTimeout(prazo);
           resolver(achado[0]);
@@ -68,8 +73,11 @@ describe.skipIf(!temBinario)('binario empacotado', () => {
     await rm(trabalho, { recursive: true, force: true }).catch(() => {});
   });
 
-  it('sobe e anuncia uma URL local com token', () => {
-    expect(base).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?t=.+/);
+  it('sobe e anuncia uma URL local estavel, sem token', () => {
+    expect(base).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    // O contrato mudou na leva 1 e o oposto agora e o requisito: token na URL
+    // vazaria para o historico do browser e para o `Referer`.
+    expect(base).not.toContain('?t=');
   });
 
   it.each(['app.css', 'app.js'])(
