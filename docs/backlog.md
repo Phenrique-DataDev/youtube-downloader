@@ -31,7 +31,7 @@ de o download ser divulgado.
 | **CI de lint/testes** | não existe | O `project-context` prevê "lint + testes em push/PR". Hoje o único workflow é o `pin-ffmpeg.yml` |
 | **Workflow de release** | não existe | DESIGN prevê build disparado por tag, publicando `.exe` + SHA256 |
 | **Cross-compile Linux→Windows** | não verificado | Bun documenta suporte; exercitamos só Windows→Windows (ADR 0002). A CI de release depende disso |
-| **Bun como dependência de build** | não registrado | Instalado globalmente nesta máquina em 2026-07-21; falta registrar no onboarding |
+| **Bun como dependência de build** | registrado no projeto, ausente do onboarding | **Verificado 2026-07-23:** está no [README](../README.md) (*"para gerar o `.exe`, também Bun"*) e em `scripts/build.mjs` (`resolverBun()` tenta `BUN_PATH`, o PATH e o shim global do npm; sem nenhum, falha com instrução de instalação). Máquina nova constrói, desde que instale. O que falta é menor: `package.json` declara só `engines.node`, e o Bun não entra no instalador do onboarding |
 
 ## Ao publicar o repositório
 
@@ -39,6 +39,7 @@ de o download ser divulgado.
 |------|------|
 | **Migrar o pin do ffmpeg** | Do BtbN para Release próprio — encerra a dívida da tag podada (ADR 0001). Reassume a obrigação GPL |
 | **Confirmar a licença** | MIT foi escolhida como default em 2026-07-21; é decisão do dono e pode mudar antes de publicar |
+| **Rótulo de licença no GitHub** | **Verificado 2026-07-23:** o `LICENSE` é MIT íntegro e o `package.json` declara `"license": "MIT"`, mas a API do GitHub reporta `Other`. Causa: a seção "Dependências de terceiros" após o `---` — o detector casa o arquivo inteiro contra o texto canônico e conteúdo extra derruba a confiança. **Não é defeito:** essa seção registra que o projeto não redistribui `yt-dlp`/`ffmpeg` e que a obrigação da GPL volta se ele passar a hospedar o pacote (ver *Migrar o pin do ffmpeg*, acima). Se o rótulo importar ao publicar, mover a seção para `NOTICE`/`THIRD-PARTY.md` e deixar o `LICENSE` puro — não apagá-la |
 
 ## Fechados
 
