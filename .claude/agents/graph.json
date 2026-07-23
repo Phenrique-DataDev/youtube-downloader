@@ -1,554 +1,554 @@
 {
-    "Nodes":  [
-                  {
-                      "Id":  "build-release-specialist",
-                      "Type":  "Agent",
-                      "Role":  "vcs",
-                      "Description":  "Empacotar o app Node/TypeScript num executÃ¡vel Windows Ãºnico, publicar via GitHub Releases pelo Actions e manter a landing no GitHub Pages. Acione ao mexer em build, tamanho do binÃ¡rio, workflow de release ou no bootstrap de dependÃªncias do 1Âº uso."
-                  },
-                  {
-                      "Id":  "code-reviewer",
-                      "Type":  "Agent",
-                      "Role":  "review",
-                      "Description":  "Revisor sÃªnior de diff/PR. Prioriza por risco (correÃ§Ã£o, concorrÃªncia, recursos, contrato/retrocompat, performance), lÃª o contexto e os chamadores alÃ©m do diff, revisa o que ficou de fora e casa a linguagem com a severidade â€” sinal alto, sem nit-bombing. Delega estilo aos linters de CI e profundidade de seguranÃ§a ao security-reviewer. Read-only."
-                  },
-                  {
-                      "Id":  "debugger",
-                      "Type":  "Agent",
-                      "Role":  "debug",
-                      "Description":  "Vai da falha Ã  causa-raiz pelo mÃ©todo cientÃ­fico (hipÃ³teseâ†’prediÃ§Ã£oâ†’experimentoâ†’observaÃ§Ã£o), nÃ£o ao sintoma. Reproduz primeiro, checa ambiente antes da lÃ³gica, reduz o reprodutor (delta debugging), instrumenta com logs/traces, usa debugger e git bisect para regressÃ£o, e trata heisenbug/flaky/concorrÃªncia. Use quando algo quebra ou um teste falha sem causa Ã³bvia."
-                  },
-                  {
-                      "Id":  "designer",
-                      "Type":  "Agent",
-                      "Role":  "design",
-                      "Description":  "Expert em UI/frontend que conduz shapeâ†’craftâ†’audit â€” contraste WCAG/APCA, design tokens (primitivoÃ—semÃ¢ntico), tipografia/espaÃ§o fluido, ARIA APG, Core Web Vitals (CLS/LCP/INP), motion com prefers-reduced-motion, anti-slop, static-first. Use ao criar/revisar/refinar interface. Aponta para a skill `impeccable` quando instalada (`/supplements design`); sem ela, aplica a mesma disciplina diretamente. NÃ£o carrega paleta/referÃªncias fixas de nenhum projeto."
-                  },
-                  {
-                      "Id":  "documenter",
-                      "Type":  "Agent",
-                      "Role":  "documentation",
-                      "Description":  "Expert em escrita tÃ©cnica humanoÃ—LLM (fora da KB) â€” organiza `docs/` por DiÃ¡taxis (tutorial/how-to/reference/explanation), lavra ADR (Nygard/MADR), changelog Keep a Changelog derivado de Conventional Commits, runbook/onboarding e diagramas Mermaid. Registros append-only datados, derivados do git/cÃ³digo; nunca inventa. Use ao registrar o que mudou/aconteceu ou documentar como algo funciona."
-                  },
-                  {
-                      "Id":  "explorer",
-                      "Type":  "Agent",
-                      "Role":  "search",
-                      "Description":  "Explora uma codebase desconhecida e devolve um mapa conciso (pontos de entrada, como conecta, onde a mudanÃ§a entra) sem despejar arquivos. Segue o call graph (definiÃ§Ã£oâ†’usosâ†’testes), nÃ£o sÃ³ hits de grep; domina ripgrep avanÃ§ado (tipos, contexto, -w, globs), ast-grep (busca por AST) e tags/LSP. Use para \"onde fica X\" antes de implementar. Read-only."
-                  },
-                  {
-                      "Id":  "external-observer",
-                      "Type":  "Agent",
-                      "Role":  "observation",
-                      "Description":  "Observador de caixa-preta â€” valida ou mapeia um alvo externo/opaco (site, API, app rodando) por observaÃ§Ã£o read-only (rede/HAR, headers de cache/CDN, contrato/OpenAPI), separando fato de hipÃ³tese com evidÃªncia real e respeitando autorizaÃ§Ã£o (CFAA/ToS/robots). Confronta com uma referÃªncia; nunca replica, burla nem aplica. SaÃ­da: relatÃ³rio."
-                  },
-                  {
-                      "Id":  "git-workflow",
-                      "Type":  "Agent",
-                      "Role":  "vcs",
-                      "Description":  "Expert em higiene de repositÃ³rio e fluxo Git/PR â€” Conventional Commits, commits atÃ´micos/bisect-friendly, rebase Ã— merge (regra de ouro do histÃ³rico compartilhado), .gitignore preciso, PRs pequenos e revisÃ¡veis. Conhece Git-Worktree (isolar branches/sessÃµes paralelas sem colidir na working tree) e aplica isso a outras Ã¡reas, como coordenaÃ§Ã£o de sessÃµes concorrentes (/peers). Use ao preparar commits/PRs, revisar histÃ³rico, organizar o repo ou paralelizar trabalho. Roda git/gh."
-                  },
-                  {
-                      "Id":  "media-pipeline-specialist",
-                      "Type":  "Agent",
-                      "Role":  "review",
-                      "Description":  "Implementar ou revisar a camada que fala com yt-dlp/ffmpeg â€” seleÃ§Ã£o de formato, muxing vÃ­deo+Ã¡udio, extraÃ§Ã£o de Ã¡udio, parsing de progresso e taxonomia de erros do extractor. Acione ao mexer no nÃºcleo de download do youtube-downloader."
-                  },
-                  {
-                      "Id":  "security-reviewer",
-                      "Type":  "Agent",
-                      "Role":  "security",
-                      "Description":  "RevisÃ£o de seguranÃ§a em profundidade (AppSec) guiada por fronteira de confianÃ§a â€” OWASP Top 10 (2021/2025) e ASVS, injeÃ§Ã£o/SSRF/desserializaÃ§Ã£o/IDOR, authn/authz, cripto, supply-chain (SLSA, lockfiles/pinning), segredos no working-tree e no histÃ³rico git (pickaxe, gitleaks/trufflehog) e audit de deps (osv-scanner/pip-audit/npm audit). Read-only."
-                  },
-                  {
-                      "Id":  "test-writer",
-                      "Type":  "Agent",
-                      "Role":  "testing",
-                      "Description":  "Escreve/completa testes na stack do projeto cobrindo caminho feliz, bordas, falhas e os Acceptance Tests do DEFINE. Domina pirÃ¢mideÃ—trofÃ©u, AAA, testar contrato (nÃ£o implementaÃ§Ã£o), determinismo anti-flaky (relÃ³gio/RNG/ordem/estado/async), property-based (Hypothesis/fast-check), mutation testing (mutmut/Stryker) para provar que os testes matam bugs, e mock sem sobre-mock. LÃª o setup do projeto â€” nÃ£o inventa framework. Cria/edita testes e roda."
-                  },
-                  {
-                      "Id":  "tracker",
-                      "Type":  "Agent",
-                      "Role":  "tracking",
-                      "Description":  "Expert em trÃ¡fego/traqueamento server-side. Domina sGTM (webâ†’tag mÃ£eâ†’servidor first-partyâ†’GA4/Meta CAPI/Google Ads), dedup clientÃ—server por `event_id`/`transaction_id`, click-ids (fbclidâ†’fbc, gclid/gbraid/wbraid) com fallback e ITP, PII normalizada+SHA-256 hex, Enhanced Conversions, atribuiÃ§Ã£o cross-domain, Consent Mode v2 (EEA) e QA de runtime (DebugView/Tag Assistant/Test Events/EMQ). LÃª o setup do projeto â€” nÃ£o carrega IDs/eventos fixos."
-                  },
-                  {
-                      "Id":  "validator",
-                      "Type":  "Agent",
-                      "Role":  "validation",
-                      "Description":  "Verifica se o resultado entregue cumpre a spec e os Acceptance Tests do DEFINE â€” executa e observa o comportamento real, checa exit code (nÃ£o sÃ³ stdout), cobre o caso negativo e a fronteira, e isola o veredito em ambiente reprodutÃ­vel (worktree limpo, deps do zero). Distingue cumpre/parcial/nÃ£o-cumpre com evidÃªncia. NÃ£o conserta â€” sÃ³ verifica. Read-only."
-                  },
-                  {
-                      "Id":  "ytdlp-simulator",
-                      "Type":  "Agent",
-                      "Role":  "simulation",
-                      "Description":  "Simular uma mudanÃ§a na seleÃ§Ã£o de formato do yt-dlp antes de aplicÃ¡-la â€” mostra o que SERIA baixado (formato, codec, tamanho, se precisa muxing) sem baixar byte nenhum. Acione a partir do /simulate ao mexer em seletor de formato, resoluÃ§Ã£o ou pÃ³s-processamento."
-                  },
-                  {
-                      "Id":  "github-actions",
-                      "Type":  "Domain",
-                      "Role":  "",
-                      "Description":  ""
-                  },
-                  {
-                      "Id":  "media",
-                      "Type":  "Domain",
-                      "Role":  "",
-                      "Description":  ""
-                  },
-                  {
-                      "Id":  "node-packaging",
-                      "Type":  "Domain",
-                      "Role":  "",
-                      "Description":  ""
-                  },
-                  {
-                      "Id":  "max",
-                      "Type":  "Hub",
-                      "Role":  "orchestrator-hub",
-                      "Description":  "Modo MAX — hub orquestrador-mestre do grafo de agentes (H7)"
-                  },
-                  {
-                      "Id":  "autoatualizacao-do-binario",
-                      "Type":  "KbEntry",
-                      "Role":  "",
-                      "Description":  "",
-                      "Layer":  "tools",
-                      "Domain":  "media",
-                      "ContentType":  "reference",
-                      "Status":  "active"
-                  },
-                  {
-                      "Id":  "saida-programatica",
-                      "Type":  "KbEntry",
-                      "Role":  "",
-                      "Description":  "",
-                      "Layer":  "tools",
-                      "Domain":  "media",
-                      "ContentType":  "reference",
-                      "Status":  "active"
-                  },
-                  {
-                      "Id":  "selecao-de-formato",
-                      "Type":  "KbEntry",
-                      "Role":  "",
-                      "Description":  "",
-                      "Layer":  "tools",
-                      "Domain":  "media",
-                      "ContentType":  "pattern",
-                      "Status":  "active"
-                  },
-                  {
-                      "Id":  "taxonomia-de-erros",
-                      "Type":  "KbEntry",
-                      "Role":  "",
-                      "Description":  "",
-                      "Layer":  "tools",
-                      "Domain":  "media",
-                      "ContentType":  "reference",
-                      "Status":  "active"
-                  },
-                  {
-                      "Id":  "binary-size-budget",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "needed"
-                  },
-                  {
-                      "Id":  "decision-preview",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "project",
-                      "Status":  "valid"
-                  },
-                  {
-                      "Id":  "gerador-de-manuais",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "referenced"
-                  },
-                  {
-                      "Id":  "impeccable",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "referenced"
-                  },
-                  {
-                      "Id":  "media-format-selection",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "needed"
-                  },
-                  {
-                      "Id":  "page-to-markdown",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "project",
-                      "Status":  "valid"
-                  },
-                  {
-                      "Id":  "release-workflow",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "needed"
-                  },
-                  {
-                      "Id":  "security-guidance",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "referenced"
-                  },
-                  {
-                      "Id":  "ui-ux-pro-max",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "referenced"
-                  },
-                  {
-                      "Id":  "visual-explainer",
-                      "Type":  "Skill",
-                      "Role":  "",
-                      "Description":  "",
-                      "Scope":  "",
-                      "Status":  "referenced"
-                  }
-              ],
-    "Edges":  [
-                  {
-                      "From":  "autoatualizacao-do-binario",
-                      "To":  "media",
-                      "Type":  "IN_DOMAIN"
-                  },
-                  {
-                      "From":  "autoatualizacao-do-binario",
-                      "To":  "saida-programatica",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "autoatualizacao-do-binario",
-                      "To":  "taxonomia-de-erros",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "build-release-specialist",
-                      "To":  "git-workflow",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "build-release-specialist",
-                      "To":  "media-pipeline-specialist",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "build-release-specialist",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "code-reviewer",
-                      "To":  "security-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "code-reviewer",
-                      "To":  "test-writer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "debugger",
-                      "To":  "explorer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "debugger",
-                      "To":  "test-writer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "designer",
-                      "To":  "code-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "designer",
-                      "To":  "impeccable",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "designer",
-                      "To":  "ui-ux-pro-max",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "designer",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "documenter",
-                      "To":  "explorer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "documenter",
-                      "To":  "gerador-de-manuais",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "documenter",
-                      "To":  "visual-explainer",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "explorer",
-                      "To":  "code-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "explorer",
-                      "To":  "debugger",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "external-observer",
-                      "To":  "debugger",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "external-observer",
-                      "To":  "documenter",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "external-observer",
-                      "To":  "page-to-markdown",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "external-observer",
-                      "To":  "security-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "external-observer",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "github-actions",
-                      "To":  "release-workflow",
-                      "Type":  "PRESUPPOSES"
-                  },
-                  {
-                      "From":  "git-workflow",
-                      "To":  "code-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "build-release-specialist",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "code-reviewer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "debugger",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "designer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "documenter",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "explorer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "external-observer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "git-workflow",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "media-pipeline-specialist",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "security-reviewer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "test-writer",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "tracker",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "validator",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "max",
-                      "To":  "ytdlp-simulator",
-                      "Type":  "ORCHESTRATES"
-                  },
-                  {
-                      "From":  "media",
-                      "To":  "media-format-selection",
-                      "Type":  "PRESUPPOSES"
-                  },
-                  {
-                      "From":  "media-pipeline-specialist",
-                      "To":  "code-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "media-pipeline-specialist",
-                      "To":  "debugger",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "media-pipeline-specialist",
-                      "To":  "ytdlp-simulator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "node-packaging",
-                      "To":  "binary-size-budget",
-                      "Type":  "PRESUPPOSES"
-                  },
-                  {
-                      "From":  "saida-programatica",
-                      "To":  "media",
-                      "Type":  "IN_DOMAIN"
-                  },
-                  {
-                      "From":  "saida-programatica",
-                      "To":  "selecao-de-formato",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "saida-programatica",
-                      "To":  "taxonomia-de-erros",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "security-reviewer",
-                      "To":  "code-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "security-reviewer",
-                      "To":  "security-guidance",
-                      "Type":  "USES_SKILL"
-                  },
-                  {
-                      "From":  "selecao-de-formato",
-                      "To":  "media",
-                      "Type":  "IN_DOMAIN"
-                  },
-                  {
-                      "From":  "selecao-de-formato",
-                      "To":  "saida-programatica",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "selecao-de-formato",
-                      "To":  "taxonomia-de-erros",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "taxonomia-de-erros",
-                      "To":  "autoatualizacao-do-binario",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "taxonomia-de-erros",
-                      "To":  "media",
-                      "Type":  "IN_DOMAIN"
-                  },
-                  {
-                      "From":  "taxonomia-de-erros",
-                      "To":  "saida-programatica",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "taxonomia-de-erros",
-                      "To":  "selecao-de-formato",
-                      "Type":  "RELATED_TO"
-                  },
-                  {
-                      "From":  "test-writer",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "tracker",
-                      "To":  "external-observer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "tracker",
-                      "To":  "security-reviewer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "tracker",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "validator",
-                      "To":  "test-writer",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "ytdlp-simulator",
-                      "To":  "media-pipeline-specialist",
-                      "Type":  "CONNECTS_TO"
-                  },
-                  {
-                      "From":  "ytdlp-simulator",
-                      "To":  "validator",
-                      "Type":  "CONNECTS_TO"
-                  }
-              ]
+  "Nodes": [
+    {
+      "Id": "build-release-specialist",
+      "Type": "Agent",
+      "Role": "vcs",
+      "Description": "Empacotar o app Node/TypeScript num executável Windows único, publicar via GitHub Releases pelo Actions e manter a landing no GitHub Pages. Acione ao mexer em build, tamanho do binário, workflow de release ou no bootstrap de dependências do 1º uso."
+    },
+    {
+      "Id": "code-reviewer",
+      "Type": "Agent",
+      "Role": "review",
+      "Description": "Revisor sênior de diff/PR. Prioriza por risco (correção, concorrência, recursos, contrato/retrocompat, performance), lê o contexto e os chamadores além do diff, revisa o que ficou de fora e casa a linguagem com a severidade — sinal alto, sem nit-bombing. Delega estilo aos linters de CI e profundidade de segurança ao security-reviewer. Read-only."
+    },
+    {
+      "Id": "debugger",
+      "Type": "Agent",
+      "Role": "debug",
+      "Description": "Vai da falha à causa-raiz pelo método científico (hipótese→predição→experimento→observação), não ao sintoma. Reproduz primeiro, checa ambiente antes da lógica, reduz o reprodutor (delta debugging), instrumenta com logs/traces, usa debugger e git bisect para regressão, e trata heisenbug/flaky/concorrência. Use quando algo quebra ou um teste falha sem causa óbvia."
+    },
+    {
+      "Id": "designer",
+      "Type": "Agent",
+      "Role": "design",
+      "Description": "Expert em UI/frontend que conduz shape→craft→audit — contraste WCAG/APCA, design tokens (primitivo×semântico), tipografia/espaço fluido, ARIA APG, Core Web Vitals (CLS/LCP/INP), motion com prefers-reduced-motion, anti-slop, static-first. Use ao criar/revisar/refinar interface. Aponta para a skill `impeccable` quando instalada (`/supplements design`); sem ela, aplica a mesma disciplina diretamente. Não carrega paleta/referências fixas de nenhum projeto."
+    },
+    {
+      "Id": "documenter",
+      "Type": "Agent",
+      "Role": "documentation",
+      "Description": "Expert em escrita técnica humano×LLM (fora da KB) — organiza `docs/` por Diátaxis (tutorial/how-to/reference/explanation), lavra ADR (Nygard/MADR), changelog Keep a Changelog derivado de Conventional Commits, runbook/onboarding e diagramas Mermaid. Registros append-only datados, derivados do git/código; nunca inventa. Use ao registrar o que mudou/aconteceu ou documentar como algo funciona."
+    },
+    {
+      "Id": "explorer",
+      "Type": "Agent",
+      "Role": "search",
+      "Description": "Explora uma codebase desconhecida e devolve um mapa conciso (pontos de entrada, como conecta, onde a mudança entra) sem despejar arquivos. Segue o call graph (definição→usos→testes), não só hits de grep; domina ripgrep avançado (tipos, contexto, -w, globs), ast-grep (busca por AST) e tags/LSP. Use para \"onde fica X\" antes de implementar. Read-only."
+    },
+    {
+      "Id": "external-observer",
+      "Type": "Agent",
+      "Role": "observation",
+      "Description": "Observador de caixa-preta — valida ou mapeia um alvo externo/opaco (site, API, app rodando) por observação read-only (rede/HAR, headers de cache/CDN, contrato/OpenAPI), separando fato de hipótese com evidência real e respeitando autorização (CFAA/ToS/robots). Confronta com uma referência; nunca replica, burla nem aplica. Saída: relatório."
+    },
+    {
+      "Id": "git-workflow",
+      "Type": "Agent",
+      "Role": "vcs",
+      "Description": "Expert em higiene de repositório e fluxo Git/PR — Conventional Commits, commits atômicos/bisect-friendly, rebase × merge (regra de ouro do histórico compartilhado), .gitignore preciso, PRs pequenos e revisáveis. Conhece Git-Worktree (isolar branches/sessões paralelas sem colidir na working tree) e aplica isso a outras áreas, como coordenação de sessões concorrentes (/peers). Use ao preparar commits/PRs, revisar histórico, organizar o repo ou paralelizar trabalho. Roda git/gh."
+    },
+    {
+      "Id": "media-pipeline-specialist",
+      "Type": "Agent",
+      "Role": "review",
+      "Description": "Implementar ou revisar a camada que fala com yt-dlp/ffmpeg — seleção de formato, muxing vídeo+áudio, extração de áudio, parsing de progresso e taxonomia de erros do extractor. Acione ao mexer no núcleo de download do youtube-downloader."
+    },
+    {
+      "Id": "security-reviewer",
+      "Type": "Agent",
+      "Role": "security",
+      "Description": "Revisão de segurança em profundidade (AppSec) guiada por fronteira de confiança — OWASP Top 10 (2021/2025) e ASVS, injeção/SSRF/desserialização/IDOR, authn/authz, cripto, supply-chain (SLSA, lockfiles/pinning), segredos no working-tree e no histórico git (pickaxe, gitleaks/trufflehog) e audit de deps (osv-scanner/pip-audit/npm audit). Read-only."
+    },
+    {
+      "Id": "test-writer",
+      "Type": "Agent",
+      "Role": "testing",
+      "Description": "Escreve/completa testes na stack do projeto cobrindo caminho feliz, bordas, falhas e os Acceptance Tests do DEFINE. Domina pirâmide×troféu, AAA, testar contrato (não implementação), determinismo anti-flaky (relógio/RNG/ordem/estado/async), property-based (Hypothesis/fast-check), mutation testing (mutmut/Stryker) para provar que os testes matam bugs, e mock sem sobre-mock. Lê o setup do projeto — não inventa framework. Cria/edita testes e roda."
+    },
+    {
+      "Id": "tracker",
+      "Type": "Agent",
+      "Role": "tracking",
+      "Description": "Expert em tráfego/traqueamento server-side. Domina sGTM (web→tag mãe→servidor first-party→GA4/Meta CAPI/Google Ads), dedup client×server por `event_id`/`transaction_id`, click-ids (fbclid→fbc, gclid/gbraid/wbraid) com fallback e ITP, PII normalizada+SHA-256 hex, Enhanced Conversions, atribuição cross-domain, Consent Mode v2 (EEA) e QA de runtime (DebugView/Tag Assistant/Test Events/EMQ). Lê o setup do projeto — não carrega IDs/eventos fixos."
+    },
+    {
+      "Id": "validator",
+      "Type": "Agent",
+      "Role": "validation",
+      "Description": "Verifica se o resultado entregue cumpre a spec e os Acceptance Tests do DEFINE — executa e observa o comportamento real, checa exit code (não só stdout), cobre o caso negativo e a fronteira, e isola o veredito em ambiente reprodutível (worktree limpo, deps do zero). Distingue cumpre/parcial/não-cumpre com evidência. Não conserta — só verifica. Read-only."
+    },
+    {
+      "Id": "ytdlp-simulator",
+      "Type": "Agent",
+      "Role": "simulation",
+      "Description": "Simular uma mudança na seleção de formato do yt-dlp antes de aplicá-la — mostra o que SERIA baixado (formato, codec, tamanho, se precisa muxing) sem baixar byte nenhum. Acione a partir do /simulate ao mexer em seletor de formato, resolução ou pós-processamento."
+    },
+    {
+      "Id": "github-actions",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "media",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "node-packaging",
+      "Type": "Domain",
+      "Role": "",
+      "Description": ""
+    },
+    {
+      "Id": "max",
+      "Type": "Hub",
+      "Role": "orchestrator-hub",
+      "Description": "Modo MAX — hub orquestrador-mestre do grafo de agentes (H7)"
+    },
+    {
+      "Id": "autoatualizacao-do-binario",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "saida-programatica",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "selecao-de-formato",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "pattern",
+      "Status": "active"
+    },
+    {
+      "Id": "taxonomia-de-erros",
+      "Type": "KbEntry",
+      "Role": "",
+      "Description": "",
+      "Layer": "tools",
+      "Domain": "media",
+      "ContentType": "reference",
+      "Status": "active"
+    },
+    {
+      "Id": "binary-size-budget",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
+    },
+    {
+      "Id": "decision-preview",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "project",
+      "Status": "valid"
+    },
+    {
+      "Id": "gerador-de-manuais",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "referenced"
+    },
+    {
+      "Id": "impeccable",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "referenced"
+    },
+    {
+      "Id": "media-format-selection",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
+    },
+    {
+      "Id": "page-to-markdown",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "project",
+      "Status": "valid"
+    },
+    {
+      "Id": "release-workflow",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "needed"
+    },
+    {
+      "Id": "security-guidance",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "referenced"
+    },
+    {
+      "Id": "ui-ux-pro-max",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "referenced"
+    },
+    {
+      "Id": "visual-explainer",
+      "Type": "Skill",
+      "Role": "",
+      "Description": "",
+      "Scope": "",
+      "Status": "referenced"
+    }
+  ],
+  "Edges": [
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "autoatualizacao-do-binario",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "git-workflow",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "media-pipeline-specialist",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "build-release-specialist",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "code-reviewer",
+      "To": "security-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "code-reviewer",
+      "To": "test-writer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "debugger",
+      "To": "explorer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "debugger",
+      "To": "test-writer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "designer",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "designer",
+      "To": "impeccable",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "designer",
+      "To": "ui-ux-pro-max",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "designer",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "documenter",
+      "To": "explorer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "documenter",
+      "To": "gerador-de-manuais",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "documenter",
+      "To": "visual-explainer",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "explorer",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "explorer",
+      "To": "debugger",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "external-observer",
+      "To": "debugger",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "external-observer",
+      "To": "documenter",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "external-observer",
+      "To": "page-to-markdown",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "external-observer",
+      "To": "security-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "external-observer",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "git-workflow",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "github-actions",
+      "To": "release-workflow",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "max",
+      "To": "build-release-specialist",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "code-reviewer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "debugger",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "designer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "documenter",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "explorer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "external-observer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "git-workflow",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "media-pipeline-specialist",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "security-reviewer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "test-writer",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "tracker",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "validator",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "max",
+      "To": "ytdlp-simulator",
+      "Type": "ORCHESTRATES"
+    },
+    {
+      "From": "media",
+      "To": "media-format-selection",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "debugger",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "media-pipeline-specialist",
+      "To": "ytdlp-simulator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "node-packaging",
+      "To": "binary-size-budget",
+      "Type": "PRESUPPOSES"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "selecao-de-formato",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "saida-programatica",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "security-reviewer",
+      "To": "code-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "security-reviewer",
+      "To": "security-guidance",
+      "Type": "USES_SKILL"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "selecao-de-formato",
+      "To": "taxonomia-de-erros",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "autoatualizacao-do-binario",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "media",
+      "Type": "IN_DOMAIN"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "saida-programatica",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "taxonomia-de-erros",
+      "To": "selecao-de-formato",
+      "Type": "RELATED_TO"
+    },
+    {
+      "From": "test-writer",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "tracker",
+      "To": "external-observer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "tracker",
+      "To": "security-reviewer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "tracker",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "validator",
+      "To": "test-writer",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "ytdlp-simulator",
+      "To": "media-pipeline-specialist",
+      "Type": "CONNECTS_TO"
+    },
+    {
+      "From": "ytdlp-simulator",
+      "To": "validator",
+      "Type": "CONNECTS_TO"
+    }
+  ]
 }
