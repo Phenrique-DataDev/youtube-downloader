@@ -45,18 +45,19 @@ jobs:
       - run: npm run format:check
 
   testes:
-    name: testes (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      # Uma plataforma quebrada nao deve esconder o resultado da outra.
-      fail-fast: false
-      matrix:
-        # Windows nao e redundancia: `tests/unit/encerramento-arvore.test.ts`
-        # tem `skipIf(process.platform !== 'win32')` e cobre o `taskkill /T` que
-        # fechou o defeito da arvore orfa de yt-dlp (CICLO_DE_VIDA). So no
-        # ubuntu ele PULA — a CI ficaria verde sem nunca te-lo executado, que e
-        # exatamente o falso verde que o alvo do app (Windows) nao perdoa.
-        os: [ubuntu-latest, windows-latest]
+    # So Windows, e nao por economia: o app e Windows-only por design e a suite
+    # acompanha isso no nivel do codigo-fonte. `src/bootstrap/ffmpeg.ts` extrai
+    # o pacote com o `tar.exe` do proprio System32, e `src/ytdlp/runner.ts` mata
+    # a arvore de processos com `taskkill /T`. A primeira rodada desta CI provou
+    # o ponto: `ffmpeg.test.ts` morreu no ubuntu com
+    # `spawn C:\Windows/System32/tar.exe ENOENT` (run 30012219500).
+    #
+    # Rodar no ubuntu tambem nao seria so ruido: `encerramento-arvore.test.ts`
+    # tem `skipIf(platform !== 'win32')` e PULARIA justamente o teste que fechou
+    # o defeito da arvore orfa de yt-dlp (CICLO_DE_VIDA) — um verde que nao
+    # executou o que importa. Cross-platform nao e objetivo deste projeto; se um
+    # dia for, isto vira matriz de novo.
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
