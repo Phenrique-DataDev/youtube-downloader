@@ -1,0 +1,82 @@
+# Lint, typecheck, formatacao e testes em push/PR — o que o project-context
+# previa e o repositorio nao tinha. Ate 2026-07-23 todo PR chegava com
+# `mergeStateStatus: CLEAN` por AUSENCIA de verificacao, nao por aprovacao
+# nela: o unico workflow do repo era o `pin-ffmpeg.yml`.
+#
+# As actions sao pinadas por SHA (mesmos pins do `pin-ffmpeg.yml`, e pelo mesmo
+# motivo): `@v4` e uma tag MOVEL, e quem controla o repo da action pode
+# reaponta-la a qualquer commit — o workflow rodaria codigo novo sem nenhum
+# commit nosso. O comentario ao lado do SHA diz a versao.
+name: verificacao
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Minimo necessario: nenhum job aqui escreve no repositorio. Sem isto, o
+# GITHUB_TOKEN herda o default do repo/org, que pode ser read-write.
+permissions:
+  contents: read
+
+# Push seguido de push na mesma ref cancela a rodada anterior — o veredito que
+# interessa e o do ultimo commit.
+concurrency:
+  group: verificacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  estatica:
+    name: typecheck, lint e formatacao
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # `npm run typecheck` regenera `src/ui/ativos.gerado.ts` antes de rodar o
+      # tsc — o arquivo e gitignored (divergiria em silencio dos fontes) e nao
+      # existe num clone limpo.
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
+  testes:
+    # So Windows, e nao por economia: o app e Windows-only por design e a suite
+    # acompanha isso no nivel do codigo-fonte. `src/bootstrap/ffmpeg.ts` extrai
+    # o pacote com o `tar.exe` do proprio System32, e `src/ytdlp/runner.ts` mata
+    # a arvore de processos com `taskkill /T`. A primeira rodada desta CI provou
+    # o ponto: `ffmpeg.test.ts` morreu no ubuntu com
+    # `spawn C:\Windows/System32/tar.exe ENOENT` (run 30012219500).
+    #
+    # Rodar no ubuntu tambem nao seria so ruido: `encerramento-arvore.test.ts`
+    # tem `skipIf(platform !== 'win32')` e PULARIA justamente o teste que fechou
+    # o defeito da arvore orfa de yt-dlp (CICLO_DE_VIDA) — um verde que nao
+    # executou o que importa. Cross-platform nao e objetivo deste projeto; se um
+    # dia for, isto vira matriz de novo.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+      # O projeto `integration` inteiro esta fora do CI de PR de proposito
+      # (vitest.config.ts, e a Testing Strategy do DESIGN): `pipeline.test.ts`
+      # fala com o YouTube de verdade e falha por rate limit (AT-008), e
+      # `empacotamento.test.ts` exige um `.exe` de ~94 MB compilado antes.
+      #
+      # `server.test.ts` nao tem nenhum dos dois problemas — sobe o servidor em
+      # loopback com handlers de teste, sem rede externa e sem binario, em menos
+      # de 1s. Deixa-lo de fora custaria a cobertura do contrato HTTP (token de
+      # sessao, procedencia, confinamento de caminho, ativos embutidos), que e
+      # justamente a superficie que nenhum teste unitario alcanca. Por isso o
+      # filtro e por ARQUIVO, e nao pelo projeto.
+      - run: npm run ativos
+      - run: npx vitest run --project integration tests/integration/server.test.ts

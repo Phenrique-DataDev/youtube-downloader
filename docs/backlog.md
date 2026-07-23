@@ -28,7 +28,6 @@ de o download ser divulgado.
 
 | Item | Estado | Nota |
 |------|--------|------|
-| **CI de lint/testes** | não existe | O `project-context` prevê "lint + testes em push/PR". Hoje o único workflow é o `pin-ffmpeg.yml` |
 | **Workflow de release** | não existe | DESIGN prevê build disparado por tag, publicando `.exe` + SHA256 |
 | **Cross-compile Linux→Windows** | não verificado | Bun documenta suporte; exercitamos só Windows→Windows (ADR 0002). A CI de release depende disso |
 | **Bun como dependência de build** | registrado no projeto, ausente do onboarding | **Verificado 2026-07-23:** está no [README](../README.md) (*"para gerar o `.exe`, também Bun"*) e em `scripts/build.mjs` (`resolverBun()` tenta `BUN_PATH`, o PATH e o shim global do npm; sem nenhum, falha com instrução de instalação). Máquina nova constrói, desde que instale. O que falta é menor: `package.json` declara só `engines.node`, e o Bun não entra no instalador do onboarding |
@@ -54,3 +53,4 @@ de o download ser divulgado.
 | ~~Refino da UI local~~ | 2026-07-21 — commit `d8e7c9c`; dark-only, hierarquia por espaço, sem scroll em 1440×900 |
 | ~~Landing `site/`~~ | 2026-07-21 — commit `d8e7c9c`; mesma linguagem visual da UI, self-contained. **Existe, mas ainda não está no ar** — ver acima |
 | ~~Escolha de formato de áudio (SHOULD do DEFINE)~~ | 2026-07-21 — commit `1596ea5`; MP3 ou M4A sem reconversão. O SHOULD estava pela metade e nenhum AT o guardava |
+| ~~CI de lint/testes~~ | 2026-07-23 — `.github/workflows/verificacao.yml`; typecheck/lint/formatação no ubuntu + testes em ubuntu **e** windows. O `pipeline.test.ts` (rede) e o `empacotamento.test.ts` (exige `.exe`) seguem fora do CI de PR, por decisão do DESIGN |
