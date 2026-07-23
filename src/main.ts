@@ -211,7 +211,17 @@ async function principal(): Promise<void> {
   const encerrar = async () => {
     // AT-011: nenhum processo filho sobrevive ao app.
     encerrarTodosOsProcessos();
+
+    // Failsafe: encerrar e irreversivel por natureza, e travar TENTANDO
+    // encerrar e o pior resultado possivel — um processo zumbi segurando a
+    // porta 47821 quebra o link salvo da proxima execucao (ela sonda a porta,
+    // acha algo que nao responde e cai no fallback), e o publico-alvo nao vai
+    // ao Gerenciador de Tarefas. Se `fechar()` nao resolver a tempo, saimos
+    // assim mesmo.
+    const prazoFatal = setTimeout(() => process.exit(0), 2000);
+
     await servidor.fechar();
+    clearTimeout(prazoFatal);
     process.exit(0);
   };
 

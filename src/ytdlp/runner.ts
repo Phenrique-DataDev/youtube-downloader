@@ -6,7 +6,7 @@
  * construcao — com shell, um titulo bem escolhido vira execucao de comando.
  */
 
-import { spawn, type ChildProcessByStdio } from 'node:child_process';
+import { spawn, execFile, type ChildProcessByStdio } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import type { Readable } from 'node:stream';
 
@@ -110,9 +110,24 @@ export function executarYtdlp(
 
 function encerrar(filho: ProcessoYtdlp): void {
   if (filho.exitCode !== null || filho.signalCode !== null) return;
+
+  const pid = filho.pid;
+  // No Windows o yt-dlp gera um SUBPROCESSO por formato (video + audio, um
+  // `yt-dlp.exe` neto para cada). Um `kill` no filho DIRETO nao propaga para
+  // esse neto — ele fica orfao baixando, e ainda segura o stdout herdado, o que
+  // trava o `close` do filho e, por tabela, o `encerrar()` do app. `taskkill
+  // /T` derruba a arvore inteira. Array de argumentos + `shell: false`: a mesma
+  // regra inegociavel do topo deste arquivo, agora tambem aqui.
+  if (process.platform === 'win32' && pid !== undefined) {
+    execFile('taskkill', ['/PID', String(pid), '/T', '/F'], { shell: false }, () => {
+      // Best-effort: se o processo ja morreu, o taskkill sai com erro — tudo bem.
+    });
+    return;
+  }
+
   filho.kill('SIGTERM');
-  // No Windows o SIGTERM nem sempre derruba o processo; o SIGKILL depois de
-  // um intervalo curto e o que garante o AT-011.
+  // Fora do Windows o SIGTERM nem sempre derruba na hora; o SIGKILL depois de um
+  // intervalo curto e o que garante o AT-011.
   setTimeout(() => {
     if (filho.exitCode === null && filho.signalCode === null) filho.kill('SIGKILL');
   }, 3000).unref();
