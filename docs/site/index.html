@@ -23,15 +23,25 @@
           Nada passa por servidor nenhum.
         </p>
 
+        <!--
+          /releases/latest/download/<asset> resolve para o arquivo da versao
+          mais recente e responde com Content-Disposition: attachment — o
+          navegador baixa direto, sem passar pela pagina da Release. A URL nao
+          carrega numero de versao, entao nao precisa ser editada a cada
+          release.
+        -->
         <a
-          href="https://github.com/Phenrique-DataDev/youtube-downloader/releases/latest"
+          href="https://github.com/Phenrique-DataDev/youtube-downloader/releases/latest/download/youtube-downloader.exe"
           class="pill pill-primaria"
           >Baixar youtube-downloader.exe</a
         >
 
         <p class="verdade">
           <span class="ponto" aria-hidden="true"></span>
-          Licença MIT · Código-fonte no GitHub
+          Licença MIT · Código-fonte e checksum na
+          <a href="https://github.com/Phenrique-DataDev/youtube-downloader/releases/latest"
+            >página da versão</a
+          >
         </p>
       </section>
 
