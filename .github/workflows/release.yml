@@ -120,3 +120,4 @@ jobs:
             --verify-tag \
             dist/youtube-downloader.exe \
             dist/youtube-downloader.exe.sha256
+/
