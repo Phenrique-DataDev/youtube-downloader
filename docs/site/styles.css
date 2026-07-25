@@ -219,6 +219,18 @@ code {
   font-size: 0.75rem;
 }
 
+/* Mesmo tratamento de .rodape a: sem isto o link herda o azul default do
+   navegador, que destoa da paleta e competiria com o botao primario. */
+.verdade a {
+  color: var(--texto-suave);
+  text-decoration-color: var(--contorno);
+  text-underline-offset: 3px;
+}
+
+.verdade a:hover {
+  color: var(--texto);
+}
+
 .ponto {
   width: 0.375rem;
   height: 0.375rem;
