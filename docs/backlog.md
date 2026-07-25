@@ -38,9 +38,16 @@ de o download ser divulgado.
 |------|------|
 | **Migrar o pin do ffmpeg** | Do BtbN para Release próprio — encerra a dívida da tag podada (ADR 0001). Reassume a obrigação GPL |
 | **Confirmar a licença** | MIT foi escolhida como default em 2026-07-21; é decisão do dono e pode mudar antes de publicar |
-| **Rótulo de licença no GitHub** | **Verificado 2026-07-23:** o `LICENSE` é MIT íntegro e o `package.json` declara `"license": "MIT"`, mas a API do GitHub reporta `Other`. Causa: a seção "Dependências de terceiros" após o `---` — o detector casa o arquivo inteiro contra o texto canônico e conteúdo extra derruba a confiança. **Não é defeito:** essa seção registra que o projeto não redistribui `yt-dlp`/`ffmpeg` e que a obrigação da GPL volta se ele passar a hospedar o pacote (ver *Migrar o pin do ffmpeg*, acima). Se o rótulo importar ao publicar, mover a seção para `NOTICE`/`THIRD-PARTY.md` e deixar o `LICENSE` puro — não apagá-la |
 
 ## Fechados
+
+**Sessão 2026-07-25 (Steps 0, 1, 2, 7):**
+- Favicon na landing e na UI local (Passo 0)
+- Rótulo de licença no GitHub (Passo 1) — resolvido via remoção da seção extra no LICENSE
+- Lint e testes no CI (Passo 2) — expandido para rodar em push/PR
+- BRAINSTORM_ARQUITETURA_ENTREGA arquivado (Passo 7) — feature absorvida no `project-context.md`
+
+| Item | Quando |
 
 | Item | Quando |
 |------|--------|

@@ -1,0 +1,122 @@
+# Workflow de release: gera o .exe no Windows e publica GitHub Release
+# Disparado por push de tag v*.*.* (ex.: v0.1.0)
+#
+# Actions pinadas por SHA (mesmo motivo do verificacao.yml): tags sao moveis
+# e poderiam apontar para codigo malicioso sem nenhum commit nosso.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da versao (ex: v0.1.0)'
+        required: true
+
+# Este workflow ESCREVE no repositorio (cria Release), entao precisa de
+# contents: write. E o unico workflow do projeto com essa permissao.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compilar .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Bun e necessario para compilar o executavel (scripts/build.mjs).
+      # resolverBun() no build.mjs tenta BUN_PATH, PATH e shim global; se
+      # nenhum estiver presente, o npm i -g garante que o shim exista.
+      - run: npm i -g bun
+
+      - run: npm run build
+
+      # Gera SHA256 do executavel. certutil (nativo do Windows) emite o hash
+      # em formato de 2 linhas: cabecalho + hash em uppercase. O Select-String
+      # extrai so a linha do hash; Out-File -Encoding ascii evita BOM.
+      - name: Calcular SHA256
+        shell: pwsh
+        run: |
+          $hash = (certutil -hashfile dist\youtube-downloader.exe SHA256 | Select-String '^[A-F0-9]{64}$').Line
+          $hash | Out-File -FilePath dist\youtube-downloader.exe.sha256 -Encoding ascii -NoNewline
+
+      # Upload dos 2 artefatos para o job de publicacao. O caminho eh relativo
+      # ao workspace; artifacts sao identificados pelo name.
+      - uses: actions/upload-artifact@ea054a5b5c30f6e1b1e64a6c3e33132a5e98a6e1 # v4.5.1
+        with:
+          name: executavel
+          path: dist/youtube-downloader.exe
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@ea054a5b5c30f6e1b1e64a6c3e33132a5e98a6e1 # v4.5.1
+        with:
+          name: sha256
+          path: dist/youtube-downloader.exe.sha256
+          if-no-files-found: error
+
+  publicar:
+    name: Publicar Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      # Baixa os 2 artefatos do job anterior. Por padrao vao para o diretorio
+      # corrente; path: dist/ os coloca na mesma estrutura do build.
+      - uses: actions/download-artifact@9f5bf5b74c37bc5c3dbde4977290faf5d1ab0557 # v4.2.0
+        with:
+          name: executavel
+          path: dist
+
+      - uses: actions/download-artifact@9f5bf5b74c37bc5c3dbde4977290faf5d1ab0557 # v4.2.0
+        with:
+          name: sha256
+          path: dist
+
+      # Cria GitHub Release a partir da tag. O body contem instrucoes de uso e
+      # o aviso do SmartScreen (mesmo texto da landing site/index.html).
+      # make_latest: true faz o /releases/latest apontar para esta release.
+      - name: Criar Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          cat > release-body.md << 'EOF'
+          ## Download
+
+          Baixe o `youtube-downloader.exe` abaixo e execute. O navegador abre sozinho na interface.
+
+          **Aviso do SmartScreen:** O executável não é assinado digitalmente, então o Windows exibe um alerta na primeira vez. É esperado — assinatura de código é um certificado pago, e o projeto não tem um. Para seguir, clique em **Mais informações** e depois em **Executar assim mesmo**. Se preferir, compile você mesmo a partir do código (veja o README).
+
+          **Primeira execução:** Na primeira vez o app baixa `yt-dlp` (17 MB) e `ffmpeg` (160 MB), conferindo o SHA256 de cada um. Só acontece uma vez; depois a abertura é imediata.
+
+          ## Verificar integridade
+
+          ```bash
+          # Windows PowerShell
+          (Get-FileHash youtube-downloader.exe -Algorithm SHA256).Hash -eq (Get-Content youtube-downloader.exe.sha256)
+
+          # Linux / macOS
+          sha256sum -c youtube-downloader.exe.sha256
+          ```
+
+          ---
+
+          Licença MIT. Veja o [README](https://github.com/${{ github.repository }}) para mais detalhes.
+          EOF
+
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --notes-file release-body.md \
+            --verify-tag \
+            dist/youtube-downloader.exe \
+            dist/youtube-downloader.exe.sha256
