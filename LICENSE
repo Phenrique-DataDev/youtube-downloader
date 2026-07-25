@@ -19,19 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Dependências de terceiros
-
-Este projeto NÃO redistribui yt-dlp nem ffmpeg. Ambos são baixados do upstream
-na primeira execução, com SHA256 verificado, e permanecem sob suas próprias
-licenças:
-
-  yt-dlp   Unlicense           https://github.com/yt-dlp/yt-dlp
-  ffmpeg   GPL (build BtbN)    https://github.com/BtbN/FFmpeg-Builds
-
-A distinção importa: por não redistribuir os binários, a licença acima cobre
-apenas o código deste repositório. Se algum dia o projeto passar a hospedar o
-pacote do ffmpeg (ver docs/adr/0001-fonte-do-ffmpeg.md), a obrigação da GPL
-volta a valer e exigirá acompanhar LICENSE e oferta de código-fonte.

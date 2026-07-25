@@ -18,7 +18,14 @@ Na **primeira execução** o app baixa o `yt-dlp` (17 MB) e o `ffmpeg` (160 MB),
 SHA256 de cada um. Só acontece uma vez. A interface abre antes disso; o botão de download fica
 desabilitado até terminar.
 
-> Ainda não há release publicado — por enquanto o `.exe` sai de `npm run build` (ver abaixo).
+## Download
+
+Baixe a última versão em [Releases](https://github.com/Phenrique-DataDev/youtube-downloader/releases/latest).
+
+**Aviso do SmartScreen:** o executável não é assinado digitalmente, então o Windows exibe um alerta
+na primeira vez. É esperado — assinatura de código é um certificado pago, e o projeto não tem um.
+Para seguir, clique em **Mais informações** e depois em **Executar assim mesmo**. Se preferir,
+compile você mesmo a partir do código (ver seção Desenvolvimento abaixo).
 
 ## Desenvolvimento
 
