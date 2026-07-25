@@ -58,19 +58,20 @@ export interface PinFfmpeg {
 }
 
 /**
- * A tag do BtbN faz parte do pin: `latest` mudaria debaixo de nos e invalidaria
- * o hash sem aviso. O CI vigia esta URL (ver .github/workflows/pin-ffmpeg.yml).
+ * Migrado para Release próprio em 2026-07-25. A URL agora aponta para nosso
+ * Release v0.1.0, eliminando a dívida da tag `autobuild-*` podada do BtbN.
+ * O pacote é o mesmo (mesmo SHA256), mas o host é permanente.
  */
-const BTBN_TAG = 'autobuild-2026-07-21-13-38';
-const BTBN_ARQUIVO = 'ffmpeg-n8.1.2-29-g703dcc25b9-win64-gpl-8.1.zip';
+const RELEASE_TAG = 'v0.1.0';
+const FFMPEG_ARQUIVO = 'ffmpeg-n8.1.2-29-g703dcc25b9-win64-gpl-8.1.zip';
 
 export const PIN_PADRAO: PinFfmpeg = {
-  url: `https://github.com/BtbN/FFmpeg-Builds/releases/download/${BTBN_TAG}/${BTBN_ARQUIVO}`,
-  // Baixado e verificado em 2026-07-21; confere com o checksums.sha256 da
-  // mesma release (o cruzamento pega corrupcao, nao adulteracao — por isso a
-  // ancora de confianca e esta constante, ver cabecalho).
+  url: `https://github.com/Phenrique-DataDev/youtube-downloader/releases/download/${RELEASE_TAG}/${FFMPEG_ARQUIVO}`,
+  // Hash inalterado: é o mesmo pacote do BtbN, só o host mudou.
+  // Verificado em 2026-07-21; confere com o checksums.sha256 da release
+  // original BtbN autobuild-2026-07-21-13-38.
   sha256: 'ebf57e8b1a10b176b88c3cbc66e68a4aed472cf47520b0fbf003e892fb3be642',
-  rotulo: BTBN_ARQUIVO,
+  rotulo: FFMPEG_ARQUIVO,
 };
 
 /** `-x` exige os DOIS: o ffprobe e binario separado (ver deps.ffmpegPresente). */
