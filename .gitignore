@@ -10,6 +10,11 @@ build/
 .cache/
 .claude/.cache/
 
+# Pacote do ffmpeg baixado para republicar como asset da Release. 167 MB —
+# nunca versionado; a fonte de verdade e o asset da Release + o SHA256 pinado
+# em src/bootstrap/ffmpeg.ts.
+ffmpeg-*.zip
+
 # Artefatos de teste
 tests/.tmp/
 coverage/
