@@ -35,9 +35,25 @@ jobs:
       - run: npm ci
 
       # Bun e necessario para compilar o executavel (scripts/build.mjs).
-      # resolverBun() no build.mjs tenta BUN_PATH, PATH e shim global; se
-      # nenhum estiver presente, o npm i -g garante que o shim exista.
-      - run: npm i -g bun
+      #
+      # `npm i -g bun` sozinho nao basta no runner: ele instala um shim
+      # `bun.cmd` mais o `bun.exe` real sob o prefix global do npm, e o
+      # resolverBun() nao executa `.cmd` (spawn sem shell, de proposito). O
+      # fallback dele procura em %APPDATA%\npm, que NAO e o prefix aqui — o
+      # setup-node configura outro. Entao resolvemos o `.exe` real e passamos
+      # por BUN_PATH, o primeiro candidato que o resolverBun tenta.
+      - name: Instalar Bun
+        shell: pwsh
+        run: |
+          npm i -g bun
+          $prefix = npm prefix -g
+          $exe = Join-Path $prefix 'node_modules\bun\bin\bun.exe'
+          if (-not (Test-Path $exe)) {
+            $exe = (Get-ChildItem -Path $prefix -Recurse -Filter bun.exe -ErrorAction SilentlyContinue |
+                    Select-Object -First 1).FullName
+          }
+          if (-not $exe) { throw "bun.exe nao encontrado sob o prefix global do npm ($prefix)" }
+          "BUN_PATH=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - run: npm run build
 
