@@ -25,9 +25,9 @@ Instaladas pelo onboarding (`onboarding/install.ps1`):
 
 ## Como aplicar
 
-1. **Verifique disponibilidade** antes de usar:
-   - PowerShell: `Get-Command <cli> -ErrorAction SilentlyContinue`
-   - Bash: `command -v <cli>`
+1. **Verifique disponibilidade só se houver dúvida** (CLI fora da tabela, ou um comando falhou
+   com "não encontrado"): PowerShell `Get-Command <cli> -ErrorAction SilentlyContinue`, Bash
+   `command -v <cli>`.
 2. **Use a CLI** no lugar de reimplementar (ex.: `gh` para GitHub, `jq`/`yq` para JSON/YAML,
    `rg` para busca em código).
 3. **Não invente flags.** Em dúvida, confirme com `--help` antes de rodar.

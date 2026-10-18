@@ -14,8 +14,10 @@ Explorar `$ARGUMENTS` por diálogo **antes** de capturar requisitos formais.
 
 ## Processo
 1. **Contexto** — explore estrutura do projeto, padrões existentes e commits recentes.
-2. **Perguntas** — uma de cada vez (prefira múltipla escolha), no mínimo 3, até a
-   intenção ficar clara.
+2. **Interrogatório** — carregue a skill [`grill-me`](../skills/grill-me/SKILL.md) (tool `Skill`)
+   e conduza as rodadas até a *frontier* esvaziar. Este **é** o passo de perguntas da fase: não o
+   troque por perguntas soltas nem por uma pergunta por turno. O que o passo 1 pode descobrir sozinho
+   não entra na rodada — rodada carrega **decisão**, não fato.
 3. **Amostras** — colete dados/arquivos de exemplo que sirvam de *grounding* (few-shot).
 4. **Abordagens** — proponha 2–3 caminhos com prós/contras e recomende um.
 5. **YAGNI** — corte o que for desnecessário; registre o que foi removido.

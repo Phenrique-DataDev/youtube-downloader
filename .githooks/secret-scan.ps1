@@ -25,9 +25,13 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # --- Carrega a lib unica de deteccao -----------------------------------------------------------
+# $env:USERPROFILE só existe no Windows. No Linux/macOS ele é nulo, o Join-Path LANÇAVA e, com
+# ErrorActionPreference=Stop, o pre-commit saía 1 — bloqueando TODO commit do projeto (medido no
+# runner macos-15, 2026-09-10). $HOME existe nos dois (e no 5.1).
+$userHome = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
 $libCandidates = @(
     (Join-Path $PSScriptRoot 'secret-patterns.ps1'),
-    (Join-Path $env:USERPROFILE '.claude/hooks/lib/secret-patterns.ps1')
+    (Join-Path $userHome '.claude/hooks/lib/secret-patterns.ps1')
 )
 $lib = $libCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 if (-not $lib) {
@@ -54,28 +58,47 @@ function Get-StagedAddedLine {
     return ($added -join "`n")
 }
 
-# --- Avaliacao ---------------------------------------------------------------------------------
-$problems = New-Object System.Collections.Generic.List[string]
+# --- Avaliacao (PURA em relacao a saida: devolve os problemas, NAO decide o exit) ---------------
+# O `exit` mora so no bloco de guard la embaixo. E de proposito: enquanto a decisao de bloqueio
+# vivia solta no corpo do script, testar o hook exigia executa-lo, e ai o `exit 1` derrubava o
+# host do Pester. Com a avaliacao numa funcao, o teste chama Get-SecretScanProblem e verifica a
+# LISTA -- inclusive o caso que bloqueia, que e o que importa num hook de segredo.
+function Get-SecretScanProblem {
+    $problems = New-Object System.Collections.Generic.List[string]
 
-foreach ($f in (Get-StagedFile)) {
-    if (Test-IsSecretFilePath $f) {
-        $problems.Add("arquivo de segredo no commit: $f")
+    foreach ($f in (Get-StagedFile)) {
+        if (Test-IsSecretFilePath $f) {
+            $problems.Add("arquivo de segredo no commit: $f")
+        }
     }
+
+    $findings = Find-SecretMatch -Text (Get-StagedAddedLine) -MinConfidence 'High'
+    foreach ($hit in $findings) {
+        $problems.Add("$($hit.Pattern) detectado (amostra: $($hit.Sample))")
+    }
+
+    return @($problems)
 }
 
-$findings = Find-SecretMatch -Text (Get-StagedAddedLine) -MinConfidence 'High'
-foreach ($hit in $findings) {
-    $problems.Add("$($hit.Pattern) detectado (amostra: $($hit.Sample))")
+function Write-SecretScanBlock {
+    param([Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Problem)
+
+    Write-Host ''
+    Write-Host '  COMMIT BLOQUEADO — possivel segredo no que esta staged:' -ForegroundColor Red
+    foreach ($p in $Problem) { Write-Host "    - $p" -ForegroundColor Yellow }
+    Write-Host ''
+    Write-Host '  Remova/rotacione o segredo e refaca o stage. Se for falso-positivo:' -ForegroundColor DarkGray
+    Write-Host '    git commit --no-verify   (pula a verificacao conscientemente)' -ForegroundColor DarkGray
+    Write-Host ''
 }
 
-if ($problems.Count -eq 0) { exit 0 }
-
-# --- Bloqueio ----------------------------------------------------------------------------------
-Write-Host ''
-Write-Host '  COMMIT BLOQUEADO — possivel segredo no que esta staged:' -ForegroundColor Red
-foreach ($p in $problems) { Write-Host "    - $p" -ForegroundColor Yellow }
-Write-Host ''
-Write-Host '  Remova/rotacione o segredo e refaca o stage. Se for falso-positivo:' -ForegroundColor DarkGray
-Write-Host '    git commit --no-verify   (pula a verificacao conscientemente)' -ForegroundColor DarkGray
-Write-Host ''
-exit 1
+# --- Guard: roda o fluxo só quando NÃO dot-sourced (Pester faz `. secret-scan.ps1`) -------------
+if ($MyInvocation.InvocationName -ne '.') {
+    # O @() NAO e cosmetico: sob Set-StrictMode, uma lista VAZIA devolvida pela funcao nao emite
+    # nada no pipeline e a variavel fica $null -- e $null.Count LANCA. Sem isto o hook explode no
+    # caminho FELIZ (nada staged), que e justamente o que roda em todo commit.
+    $problems = @(Get-SecretScanProblem)
+    if ($problems.Count -eq 0) { exit 0 }
+    Write-SecretScanBlock -Problem $problems
+    exit 1
+}

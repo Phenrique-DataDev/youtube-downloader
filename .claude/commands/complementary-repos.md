@@ -22,6 +22,15 @@ em `.claude/complementary-repos.psd1`, versionado no **projeto-alvo** (não no s
 
 ---
 
+## Passo 0 — Carregar a disciplina
+
+**Leia** `.claude/postures/complementary-repos.md` (ferramenta `Read`) antes de agir — é onde vive o
+ciclo CONSULTAR→RESOLVER→LER→ADAPTAR, o boundary read-only e as red flags. Ela **não** é always-on:
+a rule `rules/complementary-repos.md` guarda só o predicado (o registro existe?) e aponta para cá,
+para que o projeto sem registro nenhum não pague por ela em toda sessão.
+
+---
+
 ## Passo 1 — Resolver a camada `tools/` e agir
 
 ```powershell

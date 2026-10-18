@@ -1,8 +1,12 @@
 ---
 description: "Health-check do runtime instalado dos guards de segurança — prova que os hooks ainda disparam (não só que a config existe)"
+allowed-tools: Read Grep Glob
+disallowed-tools: Edit Write NotebookEdit
+metadata:
+  contract: read-only
 ---
 
-# /doctor — saúde do runtime dos guards (R2)
+# /guards-check — saúde do runtime dos guards (R2)
 
 Verifica se os **2 guards de segurança** (`secret` / `destructive`) **realmente
 disparam** na sua instalação — não só se o template está correto. Fecha o buraco do **R2**: quando
@@ -17,7 +21,7 @@ o `pwsh` sai do PATH ou um hook é movido/quebrado, o spawn falha (exit 9009/127
 ## Uso
 
 ```text
-/doctor     # imprime o painel de saúde dos guards instalados
+/guards-check     # imprime o painel de saúde dos guards instalados
 ```
 
 ---
@@ -61,9 +65,9 @@ camada determinística está indisponível e faça a checagem **à mão**, sem i
 
 ## Regras
 
-- **Read-only:** `/doctor` nunca escreve em `~/.claude` nem aplica correção — só diagnostica e
+- **Read-only:** `/guards-check` nunca escreve em `~/.claude` nem aplica correção — só diagnostica e
   **orienta** a próxima ação (reinstalar o onboarding / consertar o PATH).
-- **Prova o runtime, não o template:** o `check.ps1` valida a fonte; o `/doctor` valida o **instalado**.
+- **Prova o runtime, não o template:** o `check.ps1` valida a fonte; o `/guards-check` valida o **instalado**.
 - **`skip` não é `fail`:** um guard não-aplicável é pulado, não reprovado.
 - **Não inventa estado:** se não houver `settings.json` instalado, diz para rodar o onboarding — não
   finge que está saudável.

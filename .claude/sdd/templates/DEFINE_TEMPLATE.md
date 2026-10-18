@@ -36,11 +36,15 @@
 
 ## Acceptance Tests
 
-| ID | Cenário | Given | When | Then |
-|----|---------|-------|------|------|
-| AT-001 | {happy path} | {estado} | {ação} | {resultado esperado} |
-| AT-002 | {erro} | {…} | {…} | {…} |
-| AT-003 | {edge case} | {…} | {…} | {…} |
+> **Falsificador** = a condição concreta sob a qual o AT **reprova**. É o que o `/build` reintroduz
+> na verificação por mutação. Obrigatório em AT de **comportamento executável**; `N/A` **declarado**
+> (com o que verifica no lugar) em AT de doc/redação/estrutura. Vazio não é opção — ver `/define`.
+
+| ID | Cenário | Given | When | Then | Falsificador — reprova se… |
+|----|---------|-------|------|------|-----------------------------|
+| AT-001 | {happy path} | {estado} | {ação} | {resultado esperado} | {ex.: "o campo X deixar de ser validado"} |
+| AT-002 | {erro} | {…} | {…} | {…} | {…} |
+| AT-003 | {edge case} | {…} | {…} | {…} | {…} |
 
 ## Out of Scope
 - {o que NÃO faremos agora}
@@ -85,4 +89,4 @@
 
 ---
 
-**Próximo passo:** `/design .claude/sdd/features/DEFINE_<FEATURE>.md`
+**Próximo passo:** `/spec .claude/sdd/features/DEFINE_<FEATURE>.md`

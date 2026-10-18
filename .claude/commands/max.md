@@ -30,14 +30,18 @@ porque você a está pedindo.
 1. **Leia** `.claude/postures/max-mode.md` (ferramenta `Read`) — **antes** do bootstrap, antes de ligar
    o flag, antes de qualquer outra coisa. É a fronteira (b)/(c), o contrato de hub e as classes de
    risco: sem ela você não sabe o que o MAX pode e o que não pode.
-2. **Leia** `.claude/postures/agent-routing-advanced.md` — o grafo unificado, o contrato de hub e o
-   gatilho `ultracode`, que o MAX usa para orquestrar.
 
-> **Se qualquer um dos dois arquivos não existir ou não puder ser lido: ABORTE.** Diga qual arquivo
-> faltou e **não ligue o modo** — nem "parcialmente", nem "com o que dá". Um MAX sem a postura é um MAX
-> sem a fronteira mutador/outward: ele acha que pode auto-emitir Workflow, auto-fire de skill e operar
+> **Se este arquivo não existir ou não puder ser lido: ABORTE.** Diga qual arquivo faltou e **não
+> ligue o modo** — nem "parcialmente", nem "com o que dá". Um MAX sem a postura é um MAX sem a
+> fronteira mutador/outward: ele acha que pode auto-emitir Workflow, auto-fire de skill e operar
 > como hub, **sem** as regras que dizem onde isso para. Degradar em silêncio aqui é pior do que não
 > ligar o MAX. **Falhe alto.**
+
+> **`agent-routing-advanced.md` é leitura sob demanda, no Passo 3** — quando você for **agir como
+> hub ou orquestrar**, e não antes: são ~11.200 tokens de postura, e o grafo só serve quando há
+> encadeamento de experts. A
+> fronteira de risco — que é o que justifica ler antes de ligar — mora na `max-mode.md`, e essa
+> continua obrigatória aqui.
 
 **Passo 1 — bootstrap de contexto ("ler tudo").** Resolva `$toolsRoot` pela cascata
 ([`tooling.md`](../rules/tooling.md): relativo → `$env:SDD_WORKFLOW_HOME` → degradação) e reúse os
@@ -52,18 +56,35 @@ Complemente lendo o que orienta o trabalho: `.claude/kb/_index.yaml` (domínios 
 disponíveis, MCPs ativos e hooks instalados. Sem `$toolsRoot` → **degradação consciente**: avise e siga
 só com a postura (sem o bootstrap determinístico).
 
-**Passo 2 — ligar o flag e avisar.**
+**Passo 2 — AVISAR e então ligar o flag (nesta ordem).**
+
+**O aviso vem primeiro, e a ordem é o conserto.** Ele era emitido a partir do estado recém-gravado,
+então quem decidisse **não** gravar — por pedido do usuário, por permissão negada, por prudência —
+perdia o aviso junto. Medido em sessão real: o `/max` leu as posturas, pagou +32%, não ligou o flag
+(*"isso grava em `.claude/.cache` e você pediu só leitura"*) e **não emitiu a lista de `GUARDAS
+ATIVOS`** — o usuário pagou a postura e não recebeu o contrato. `Format-MaxNotice` aceita `-State`
+nulo: o aviso **nunca** dependeu da gravação; quem o amarrou a ela foi este passo.
+
 ```powershell
 . "$toolsRoot/max.ps1"
-Enable-MaxMode -StateDir '.claude/.cache' -SessionId <id da sessão, se disponível> | Out-Null
+# 1) AVISO — sai sempre, mesmo que a gravação abaixo falhe ou seja recusada.
 Format-MaxNotice -State (Get-MaxState -StateDir '.claude/.cache') `
                  -Classes (Get-NonCriticalClasses) -ContextSummary '<resumo do Passo 1>' `
                  -NativeBudget '<diretiva de budget do usuário, ex.: 500k, ou vazio>'
+# 2) FLAG — o estado persistido; se o Write for negado, veja a degradação abaixo.
+Enable-MaxMode -StateDir '.claude/.cache' -SessionId <id da sessão, se disponível> | Out-Null
 ```
+
 **Emita o aviso** (obrigatório): o que foi reduzido (prompts do **não-crítico** via modo `auto`),
 **potência recomendada**, contexto carregado, **GUARDAS ATIVOS** (main/secret/destructive/managed), e o
 v2 — **workflows de escala autorizados**, **outward confirma a cada uso**, **budget nativo vigente** e
 **como abortar**.
+
+> **Se o flag não puder ser gravado** (permissão negada, sessão read-only, disco): **anuncie a
+> degradação** — *"modo MAX ligado só nesta conversa; o flag não pôde ser gravado, então ele não
+> sobrevive a um `resume` e o `/max status` não vai vê-lo"* — e **siga**. O que não pode acontecer é
+> o silêncio: o `/max` é o comando que mais promete ("mantendo todos os guardas") e o aviso é a única
+> superfície em que essa promessa aparece para o usuário.
 
 **Passo 3 — operar no máximo (postura `max-mode.md`).**
 - **Potência:** para tasks densas, **recomende** modelo maior + `effort` alto — **não troque o modelo à
@@ -71,6 +92,10 @@ v2 — **workflows de escala autorizados**, **outward confirma a cada uso**, **b
 - **Hub + KB:** aja como **hub** do grafo — consulte `role`/`connects_to` ([`agent-routing.md`](../rules/agent-routing.md))
   p/ escolher/encadear experts; ao montar o pacote de uma task, **puxe a KB do domínio**
   (`operations`+`implementation`, reusa `Build-KbIndex`) — aterra o subagente, não improvisa.
+  **Ao encadear de verdade** (hub, `ultracode`, grafo `:USES_SKILL`/`:PRESUPPOSES`/`:IN_DOMAIN`),
+  **leia agora** [`.claude/postures/agent-routing-advanced.md`](../postures/agent-routing-advanced.md)
+  — é o momento em que ela serve, e ela custa 0 token nas sessões de `/max` que não encadeiam.
+  Ausente/ilegível? **Avise** e siga com o núcleo: degradação consciente, nunca silenciosa.
 - **Escala (Workflow × `/orchestrate`):** poucas tasks sequenciais-com-gate → **`/orchestrate`**; **fan-out
   de N itens / pipeline / escala** → **emitir Workflow nativo** (passe um `budget` nativo se o usuário o
   declarou). O Workflow auto-emitido é **só não-mutador/não-outward** (mutador/`ask`/outward fica no loop
@@ -109,5 +134,11 @@ Get-MaxDispatches -StateDir '.claude/.cache'   # o que o MAX disparou na sessão
 - **Nunca** auto-emita Workflow **mutador/outward** em background (fica no loop principal); **nunca**
   auto-fire skill **outward** (deep-research/browser/publicar) sem confirmar; **nunca** declare/invente
   **quota** de orçamento (o freio é o `budget` nativo do Workflow, do usuário).
-- O flag é **session-bound + TTL + fail-closed**: não persiste entre sessões; corrupção/staleness ⇒
-  desligado. O enforcement da postura é **conversacional** — o flag é auxiliar (`/max status`/telemetria).
+- O flag é **TTL + fail-closed**: corrupção/staleness ⇒ desligado. O enforcement da postura é
+  **conversacional** — o flag é auxiliar (`/max status`/telemetria).
+- O vínculo de **sessão** é **condicional**: só vale se o harness expôs um `session_id` para o Passo 2
+  gravar. Sem id, não há com o que comparar e **o TTL é a única trava** — um `/max status` numa sessão
+  nova pode responder "ligado" dentro da janela. Não é furo de segurança (nada lê este flag
+  automaticamente: sem hook, sem `SessionStart`, sem rule always-on; os guardas carregam no boot e
+  seguem intactos), mas a frase anterior aqui dizia "não persiste entre sessões" — e isso era falso
+  exatamente no harness que não expõe id.

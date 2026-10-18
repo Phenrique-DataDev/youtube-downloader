@@ -80,7 +80,7 @@ Para cada gap **`missing`** (declarado ou sugerido aceito):
 Para cada skill recém-criada, **autore** (LLM) as seções `TODO` (Quando usar · Passos · Casos reais ·
 Regras críticas · Gotchas · Referências · Se crescer) a partir da capacidade e do contexto do
 projeto. Mantenha `status: scaffolded` até revisão humana — o conteúdo gerado é **proposta**, não
-verdade final. Este é o **padrão-alvo sempre** para skill nova (mesma densidade dos 11 agentes base
+verdade final. Este é o **padrão-alvo sempre** para skill nova (mesma densidade dos 12 agentes base
 do scaffold) — não uma opção entre "rápido" e "completo".
 
 **Pesquise antes de escrever — nunca da memória.** `Casos reais`, `Regras críticas` e `Gotchas`
@@ -120,10 +120,10 @@ stale. Use o **driver one-shot** (feature `auto-resync`), determinístico e idem
 . "$toolsRoot/resync.ps1" ; Invoke-Resync -ClaudeDir .claude -Write
 ```
 
-`Invoke-Resync -Write` regenera `graph.json`/`graph.cypher`, `AGENT_MAP.md` e `.claude/kb/_index.yaml`
+`Invoke-Resync -Write` regenera `graph.json`, `AGENT_MAP.md` e `.claude/kb/_index.yaml`
 (escreve só o que mudou) — fonte única, a mesma do `/sync-context`. Sem o `$toolsRoot` (degradação),
-rode `/sync-context` ao final. **Sem backstop automático:** o `resync-lint` (staleness-lint) saiu
-do `check.ps1`/CI na postura low-friction (2026-06-20) — rodar `/sync-context` após curar é
+rode `/sync-context` ao final. **Sem backstop automático:** o `resync-lint` (staleness-lint) não
+roda no `check.ps1`/CI — rodar `/sync-context` após curar é
 responsabilidade de quem cura, não uma rede de segurança do CI.
 
 ---

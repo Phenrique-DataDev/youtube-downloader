@@ -30,9 +30,21 @@
         ]
       }
     ],
-    "PostToolUse": [
+    "SubagentStart": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/agent-graph-context.ps1\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -42,18 +54,6 @@
           {
             "type": "command",
             "command": "pwsh -NoProfile -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/peer-heartbeat.ps1\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/agent-graph-context.ps1\"",
             "timeout": 10
           }
         ]

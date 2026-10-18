@@ -1,6 +1,7 @@
 ---
 name: page-to-markdown
 description: Fetch a web page and return clean, LLM-ready Markdown using only native tools — no external binary to install. Tries WebFetch first (built-in, zero setup); escalates to claude-in-chrome browser automation when the page needs real JS rendering or blocks simple fetches (anti-scraping/bot detection). Use whenever asked to convert a URL into Markdown, pull external reference content, or save a page for later reading. Not for library/framework documentation (use context7) or investigative black-box analysis (use the external-observer agent).
+argument-hint: "<url> [caminho de saída]"
 metadata:
   maintained_by: native-sdd (internal — authored in-repo, not vendored from a third party)
   version: "1.0.0"
@@ -11,6 +12,8 @@ metadata:
 Fetch a URL and return clean Markdown, escalating cost only when the cheap path fails — **without
 installing anything external** (no Go binary, no browser download). The whole capability is
 composed from tools already native to Claude Code.
+
+**Explicit trigger:** `/page-to-markdown <url> [output path]` runs this skill directly (a skill wins over a same-name command, so there is no `commands/page-to-markdown.md`). The first word of the arguments is the URL; the rest, if any, is the output path. The `external-observer` agent gets this skill preloaded via its `skills:` frontmatter field.
 
 ## When to use
 
@@ -42,7 +45,8 @@ Don't use this skill for:
      invent hierarchy the page doesn't have).
    - **Close the tab** (`tabs_close_mcp`) when done, unless the user is going to keep browsing there.
 
-3. **Save to file** (if asked): `Write` directly — no extra CLI needed.
+3. **Output:** no output path → return the Markdown in the conversation. With a path (from the
+   arguments or the request) → `Write` it there directly — no extra CLI needed.
 
 ## Why we don't need the third-party `md-fetch` binary
 

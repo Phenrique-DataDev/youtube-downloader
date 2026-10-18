@@ -5,7 +5,7 @@ argument-hint: "<o que documentar: módulo, decisão, acontecimento, runbook>"
 
 # /document — documentação humano×LLM (fora da KB)
 
-Gatilho **explícito em lote** para a postura da rule `documentation.md` (sempre-ativa). Produz/atualiza
+Gatilho **explícito em lote** para a postura `documentation.md` (o predicado vive na rule de mesmo nome). Produz/atualiza
 documentação em `docs/` que **não entra na KB**: doc de código/módulos, ADR, runbook/onboarding,
 registro de acontecimentos, referência/notas.
 
@@ -15,8 +15,8 @@ registro de acontecimentos, referência/notas.
 ## Antes de começar
 - **Pré-condição (sequência KB→docs):** o documenter atua **após o 1º `/train-kb`**. Se a KB ainda não foi
   treinada (`.claude/kb/_index.yaml` sem domínios / `.claude/kb/` vazia), **oriente a rodar `/train-kb`
-  (ou `/init`) primeiro** — a curadoria vem antes da documentação. Sob pedido explícito, prossiga avisando.
-- Leia `.claude/rules/documentation.md` (Proativo seguro) e `project-context.md`.
+  (ou `/curate`) primeiro** — a curadoria vem antes da documentação. Sob pedido explícito, prossiga avisando.
+- Leia `.claude/postures/documentation.md` (Proativo seguro) e `project-context.md`.
 - Identifique o alvo em `$ARGUMENTS` (o quê documentar) e leia o **código/artefatos reais** correspondentes.
 
 ## Execução
@@ -27,10 +27,8 @@ registro de acontecimentos, referência/notas.
 4. **Aplica:** só após aprovação, escreve em `docs/` — **nunca-destrutivo**: registros são **append-only**
    (entrada nova datada, nunca reescreve o passado); doc de código é update **pontual** do trecho tocado,
    nunca regenera a árvore. Faça backup quando sobrescrever.
-5. **Reindexar:** rode `/sync-context` para regenerar `docs/_index.md` e o ponteiro. **Busca semântica
-   (opt-in, degrada em silêncio):** se a tool `mcp__semantic-kb__reindex` estiver disponível, chame
-   `reindex(project_root=".")` — `docs/` acabou de mudar. Sem o MCP instalado (padrão), pule sem avisar
-   (ver [`semantic-search.md`](../rules/semantic-search.md)).
+5. **Reindexar:** rode `/sync-context` para regenerar `docs/_index.md` e o ponteiro — é o catálogo
+   que a busca por significado lê (ver [`semantic-search.md`](../rules/semantic-search.md)).
 
 ## Regras
 - **Nunca escreve na KB** (`.claude/kb/`) — isto é documentação humano×LLM, fora dela. A KB tem seu próprio

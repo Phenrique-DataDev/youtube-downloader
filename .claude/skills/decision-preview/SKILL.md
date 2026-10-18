@@ -1,6 +1,7 @@
 ---
 name: decision-preview
 description: Generate a single self-contained Artifact that compares 2-4 variants of an as-yet-undecided design choice side by side, grounded in real project data, and closes with an explicit choice question. Use when a decision has multiple viable options and getting it wrong after implementing would be costly to redo — a UI copy choice, a terminal/CLI output design, a schema layout, a component variant, an architecture option. Not for explaining or reviewing something already decided (use visual-explainer for that) or for a single mockup with no comparison (use artifact-design directly).
+argument-hint: "<a decisão + as variantes a comparar>"
 metadata:
   maintained_by: native-sdd (internal — not a third-party marketplace skill)
   version: "1.0.0"
@@ -12,6 +13,8 @@ Generate **one** Artifact that lets someone **choose before building**, instead 
 the first option that comes to mind. The output is always the same shape regardless of domain:
 **N variants side by side, each grounded in real project data, each annotated, closing with an
 explicit choice.**
+
+**Explicit trigger:** `/decision-preview <a decisão + as variantes>` runs this skill directly (a skill wins over a same-name command, so there is no `commands/decision-preview.md`). The decision and variants come from the arguments; **if fewer than 2 variants come in, ask before generating.**
 
 ## When to use
 
@@ -26,8 +29,17 @@ Don't use this skill for:
 - A **single** mockup with nothing to compare — that's `artifact-design` directly.
 - More than ~4 options — narrow it down first; a wall of variants defeats the point.
 
-See [`../../rules/artifact-first.md`](../../rules/artifact-first.md) for the posture that decides
-*when* to reach for this skill in the first place.
+[`../../rules/artifact-first.md`](../../rules/artifact-first.md) is the always-on predicate that
+decides *when* to reach for this skill; everything else about the posture lives here.
+
+## Routing — which tool fits
+
+| Situation | Use | Why |
+|-----------|-----|-----|
+| Compare **N undecided variants** and have the user pick one | **this skill** | the gap no other skill covers: compare + choose before building |
+| Explain/review something **already decided** (diff, plan, finished architecture) | `visual-explainer` (if installed) | already solved — don't duplicate it |
+| **One** mockup, nothing to compare | `artifact-design` directly | design guidance for an Artifact; no "variants + choice" layer needed |
+| Chart or data table | `dataviz` (if installed) | its own domain, outside this posture |
 
 ## Workflow
 
@@ -48,9 +60,33 @@ See [`../../rules/artifact-first.md`](../../rules/artifact-first.md) for the pos
    - Interactive session → publish the Artifact, then ask via `AskUserQuestion` referencing it.
    - Non-interactive (background agent/workflow) → the HTML's own "Escolha" section must stand on
      its own for async review — don't rely solely on the chat-turn question.
-7. **Publish via the `Artifact` tool.** One artifact, all variants — not one artifact per variant.
-   Follow the tool's own constraints: no `<!DOCTYPE>`/`<html>`/`<head>`/`<body>` tags (the wrapper
-   adds those), self-contained CSS/JS, theme-aware for both light and dark.
+7. **Publish via the `Artifact` tool** when the session has it (see below when it doesn't). One
+   artifact, all variants — not one artifact per variant. Follow the tool's own constraints: no
+   `<!DOCTYPE>`/`<html>`/`<head>`/`<body>` tags (the wrapper adds those), self-contained CSS/JS,
+   theme-aware for both light and dark.
+8. **The chosen variant becomes the spec** — only then implement.
+
+## Without the `Artifact` tool
+
+Check your tool list before step 7. The tool is not always there: in headless runs (`claude -p`) it
+does not exist even in the main session (measured in v0.11.10), and an account or a subagent may
+lack it too. Then don't pretend it published:
+
+1. Wrap the same page in `<!doctype html><meta charset="utf-8"><meta name="viewport"
+   content="width=device-width,initial-scale=1">` (the Artifact wrapper used to add that) and save it
+   as `.claude/sdd/features/DECISION_<slug>.html`.
+2. Say that the Artifact was **not** published, give the file path, and ask for the choice
+   (`AskUserQuestion` when interactive; the page's own "Escolha" section otherwise).
+
+## Red flags
+
+| Red flag | What it means |
+|----------|---------------|
+| Offered the comparison for renaming a variable or fixing a typo | Needless friction — the decision was trivial |
+| Used this skill to review a finished diff | Should have routed to `visual-explainer` — redundancy |
+| Implemented the "obvious" variant without showing the others when ≥ 2 were viable | Lost the point: the difference shows when looking, not when deciding alone |
+| Filled a variant with invented or placeholder data | Breaks the "never invent data" rule — ask for the real grounding first |
+| Said "published" in a session without the `Artifact` tool | False report — save the local file and say so |
 
 ## Anti-patterns (explicitly forbidden)
 

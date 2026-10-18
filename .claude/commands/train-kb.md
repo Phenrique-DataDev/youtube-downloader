@@ -37,6 +37,31 @@ oriente o usuário a rodar **`/setup`** primeiro — sem contexto não há o que
 
 ---
 
+## Passo 0.5 — Interrogar antes de inferir (obrigatório por predicado)
+
+**Predicado:** o contexto está `status: active` mas **não** cobre o que uma onda precisaria saber —
+domínio sem glossário, stack sem convenção declarada, nenhum sinal de operação/runbook. Nesse caso
+carregue a skill [`grill-me`](../skills/grill-me/SKILL.md) (tool `Skill`) **antes** do Passo 1.
+
+A árvore a interrogar é o **recorte do conhecimento**: que módulos são reais, o que é domínio e o que
+é ferramenta, o que já está documentado em outro lugar e não deve virar entrada, onde a KB erraria por
+inventar. Fatos continuam saindo do repositório (manifestos, migrations, CI, README) — a rodada só
+carrega o que **só o usuário sabe**.
+
+**Regra de área.** Se o usuário declarar uma regra que vale só para **uma parte** do projeto
+(*"em `migrations/` nunca editar migration aplicada"*, *"model de `marts/` sempre com teste
+`unique`"*), ela **não** vira entrada da KB. A KB descreve e só chega ao modelo quando é consultada.
+Uma regra de área prescreve, e tem que chegar quando o arquivo é aberto. Leia
+[`postures/path-rules.md`](../postures/path-rules.md) e **ofereça** gravá-la como
+`.claude/rules/area-<slug>.md` com `paths:`: confirme o texto e o glob com o usuário e, depois,
+rode `/sync-context`. Não infira regra que o usuário não declarou.
+
+> **Por que aqui e não no Passo 3.** Lá a pergunta é *"executar quais ondas?"* — feita **depois** do
+> plano pronto. Uma onda que não devia existir já custou a inferência que a criou, e uma que faltou
+> não aparece na lista para ser escolhida. O recorte se decide antes de derivar, não depois.
+
+---
+
 ## Passo 1 — Derivar os módulos de conhecimento (uma onda por módulo)
 
 A partir do stack/domínio **real**, infira os módulos e **mapeie cada um a uma camada** da
@@ -95,7 +120,10 @@ Mostre as ondas derivadas (camada · domínio · libs · subagente) e use `AskUs
 ## Passo 4 — Executar cada onda escolhida
 
 Para cada onda: marque `status: running` no `.yaml` e invoque o subagente via **`Agent`**,
-passando como contexto: o `.yaml` da onda, a [`kb-taxonomy.md`](../rules/kb-taxonomy.md) e —
+passando como contexto: o `.yaml` da onda, a [`kb-taxonomy.md`](../rules/kb-taxonomy.md) (**leia-a** —
+tem `paths:` e só carrega sozinha ao ler arquivo da KB; gravar entrada nova não a carrega), o
+contrato de escrita [`postures/kb-writing.md`](../postures/kb-writing.md) (**leia-o** — frontmatter
+obrigatório e orçamento de tamanho vivem lá, fora do always-on) e —
 se `target_layer: tools` — a regra [`docs-first.md`](../rules/docs-first.md). Ondas
 independentes podem rodar em paralelo (várias chamadas `Agent` na mesma mensagem).
 
@@ -119,7 +147,7 @@ Para cada entrada da onda, escreva em
 - **Conceito agnóstico** (sem fornecedor/versão, ex.: "modelagem dimensional"): é `tools/` mas
   **não** aciona context7 — vem de conhecimento estável, sem `lib_id`.
 - **Tamanho-alvo (advisory):** mire o orçamento sugerido por tipo (ver
-  [`kb-taxonomy.md`](../rules/kb-taxonomy.md) → *Orçamento de tamanho*): ~16 000 chars para
+  [`postures/kb-writing.md`](../postures/kb-writing.md) → *Orçamento de tamanho*): ~16 000 chars para
   `concept`/`pattern`/`reference`, ~4 800 para `quick-reference`/`index`, ~32 000 para
   `runbook`/`spec` (código em fenced block não conta). Estourar **não bloqueia** — `kb-lint`
   apenas sinaliza; se a entrada for grande demais, prefira **dividir** em entradas atômicas.
@@ -138,16 +166,11 @@ derivados na hora — entradas novas de KB deixam o índice (e o grafo) stale. U
 ```
 
 `Invoke-Resync -Write` regenera `.claude/kb/_index.yaml` (domínios/camadas/entradas), o
-`graph.json`/`graph.cypher` (nós `:KbEntry`) e o `AGENT_MAP.md` — fonte única, escreve só o que mudou.
+`graph.json` (nós `:KbEntry`) e o `AGENT_MAP.md` — fonte única, escreve só o que mudou.
 **Não** edite o `_index.yaml` à mão. Sem o `$toolsRoot` (degradação), rode `/sync-context` ao final.
-**Sem backstop automático:** o `resync-lint` (staleness-lint) saiu do `check.ps1`/CI na postura
-low-friction (2026-06-20) — rodar `/sync-context` após curar é responsabilidade de quem cura, não
+**Sem backstop automático:** o `resync-lint` (staleness-lint) não roda no `check.ps1`/CI —
+rodar `/sync-context` após curar é responsabilidade de quem cura, não
 uma rede de segurança do CI.
-
-**Busca semântica (opt-in, degrada em silêncio):** se a tool `mcp__semantic-kb__reindex`
-estiver disponível, chame `reindex(project_root=".")` — entradas novas de KB entram no índice
-semântico incrementalmente. Sem o MCP instalado (padrão), pule este passo sem avisar (ver
-[`semantic-search.md`](../rules/semantic-search.md)).
 
 ---
 

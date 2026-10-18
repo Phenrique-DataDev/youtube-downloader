@@ -1,5 +1,8 @@
 ---
 description: "Higiene das skills — inventaria, diagnostica e atualiza as skills dos dois escopos, com backup antes de escrever"
+disable-model-invocation: true
+metadata:
+  effect: machine
 ---
 
 # /update-skills — higiene das skills (inventário + update)

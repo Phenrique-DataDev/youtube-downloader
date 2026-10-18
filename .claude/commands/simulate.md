@@ -1,5 +1,6 @@
 ---
 description: "Simular uma mudança/fix antes de aplicar (isolado, nunca-destrutivo)"
+disable-model-invocation: true
 argument-hint: "<mudança ou fix a simular>"
 ---
 

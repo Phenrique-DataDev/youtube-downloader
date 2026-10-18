@@ -19,6 +19,7 @@
 | Conhecimento **curado e agente-facing** do domínio | `.claude/kb/` (via `/train-kb`) |
 | Insumo que **chega de fora** (specs, planilhas, solicitações) | `inbox/` |
 | Artefatos SDD gerados (BRAINSTORM/DEFINE/DESIGN/BUILD/SHIPPED) | `.claude/sdd/` |
+| **Fila de trabalho** do projeto (o que falta fazer, com critério de entrada) | `BACKLOG.md` (raiz) |
 | Documentação viva e **fixa** do projeto (sem changelog) | `README.md` (raiz) |
 
 ## Convenção

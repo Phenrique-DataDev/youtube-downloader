@@ -10,11 +10,12 @@ relevantes ao stack/domínio real, detecta lacunas e **gera agentes de domínio*
 
 > Esta é a feature **G2** (EPIC G — curadoria/auto-otimização). O comando **adiciona** ao
 > catálogo de papéis universais do base (`explorer`, `code-reviewer`, `test-writer`,
-> `git-workflow`, `security-reviewer`, `debugger`, `validator`, `documenter`, `external-observer`); nunca os substitui.
+> `git-workflow`, `security-reviewer`, `debugger`, `validator`, `documenter`, `external-observer`, `reverse-engineer`); nunca os substitui.
 >
 > **Papéis universais já cobertos pelo base — NÃO regerar:** higiene de git/PR, revisão de
 > segurança, debug de causa-raiz, validação de conformidade, **documentação humano×LLM** (`documenter`)
-> e **observação de caixa-preta** de runtime externo (`external-observer`, role `observation`).
+> **observação de caixa-preta** de runtime externo (`external-observer`, role `observation`) e
+> **engenharia reversa de artefato local** (`reverse-engineer`, role `reverse-engineering`).
 > Este comando gera **apenas** experts de **stack/domínio** (ex.: `sql-reviewer`, `frontend-specialist`,
 > `infra-specialist`) — o que o base, por ser agnóstico de stack, não cobre.
 
@@ -118,7 +119,7 @@ Use `AskUserQuestion`: *"Encontrei {N} lacuna(s). Gerar agora?"* →
 
 Salve em `.claude/agents/domain/<nome>.md` (crie a pasta `domain/` se não existir). Use
 contexto **real** — **nunca** deixe placeholders `{...}` no arquivo final. Este é o
-**padrão-alvo sempre** para agente de domínio novo — a mesma densidade dos 11 agentes base do
+**padrão-alvo sempre** para agente de domínio novo — a mesma densidade dos 12 agentes base do
 scaffold (`designer`, `security-reviewer`, `documenter`…): "Conhecimento extra" explicando o
 **mecanismo** por trás da regra (não só a regra), "Regras críticas" em pares concretos e
 "Referências" citando fonte real. Não é uma opção entre "rápido" e "completo" — é o único modo.
@@ -193,7 +194,7 @@ Se ≥1 agente foi salvo, escreva/expanda **`.claude/rules/agent-routing-domain.
 # Roteamento — agentes de domínio (gerado por `/audit-agents`)
 
 > Específicos do stack/domínio real deste projeto, derivados do `project-context.md`. O catálogo
-> **genérico** (experts de papel) vive em [`agent-routing.md`](agent-routing.md) — este arquivo
+> **genérico** (experts de papel) vive em [`agent-routing.md`](../rules/agent-routing.md) — este arquivo
 > **acrescenta**, não substitui.
 
 ## Agentes de domínio (`.claude/agents/domain/`)
@@ -225,11 +226,11 @@ deixe os derivados stale (é o que esta curadoria existe para evitar). Use o **d
 . "$toolsRoot/resync.ps1" ; Invoke-Resync -ClaudeDir .claude -Write
 ```
 
-`Invoke-Resync -Write` regenera `.claude/agents/AGENT_MAP.md`, `graph.json`/`graph.cypher` e
+`Invoke-Resync -Write` regenera `.claude/agents/AGENT_MAP.md`, `graph.json` e
 `.claude/kb/_index.yaml` (escreve só o que mudou). **Não** anexe nós ao `AGENT_MAP.md` à mão —
 o driver é a **fonte única** (o mesmo que o `/sync-context` usa). Sem o `$toolsRoot` (degradação),
-rode `/sync-context` ao final. **Sem backstop automático:** o `resync-lint` (staleness-lint) saiu
-do `check.ps1`/CI na postura low-friction (2026-06-20) — rodar `/sync-context` após curar é
+rode `/sync-context` ao final. **Sem backstop automático:** o `resync-lint` (staleness-lint) não
+roda no `check.ps1`/CI — rodar `/sync-context` após curar é
 responsabilidade de quem cura, não uma rede de segurança do CI.
 
 ---

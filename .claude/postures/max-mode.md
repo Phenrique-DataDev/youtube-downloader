@@ -90,6 +90,20 @@ parte → sintetiza), **generate-and-filter** (gera N candidatos → filtra por 
 cada um vêm da descrição da própria ferramenta `Workflow` ("quality patterns"/"canonical multi-stage
 pattern") — esta linha só nomeia o vocabulário para reconhecimento rápido.
 
+**Quando o fan-out gera achados a verificar** (review amplo, auditoria), dois ajustes que o
+*adversarial verify* da ferramenta não traz:
+
+- **Verificação proporcional à severidade.** Achado grave ganha refutador próprio; os leves de uma
+  mesma área vão juntos a um refutador em lote, com o mesmo prompt. Não tire a verificação dos leves:
+  o refutador derruba achado que contraria decisão já registrada no projeto, e isso aparece em
+  qualquer severidade.
+- **O veredito reescreve a recomendação.** Se o verificador corrige o achado, peça também a
+  recomendação reescrita a partir da versão corrigida, e use essa no resultado. A do autor segue o
+  achado original e passa a contradizer o corrigido.
+
+Numa auditoria de ~80 achados, os dois juntos cortaram 42% dos tokens da verificação, com a mesma
+taxa de derrubada (10%) e nenhuma recomendação contra o próprio achado.
+
 ### (b) Fronteira de disparo do Workflow — **só não-mutador / não-outward**
 
 Sob MAX, um Workflow **auto-emitido** (sem confirmar cada disparo) é restrito a fan-out **não-mutador e
@@ -190,7 +204,8 @@ O **`:Hub`** (nó `max`) é o **orquestrador-mestre** e o **ápice permanente** 
 editar lista**. **Ligar o MAX = operar como esse hub no máximo:** o líder amplifica o orquestrador-mestre
 que já está no grafo e **ativa todas as conexões** — delega a qualquer expert via `:ORCHESTRATES`
 (`/orchestrate`) e aciona o arsenal por gatilho. Detalhe em [`agent-routing.md`](../rules/agent-routing.md); o
-`graph.cypher` exporta o hub p/ o neo4j **se** o volume justificar (servidor H4 adiado).
+`Invoke-GraphExport -Cypher` exporta o hub p/ o neo4j sob demanda, se o volume justificar
+(servidor H4 adiado) — o dump não é artefato versionado.
 
 **Consumir o grafo unificado (H9):** ao montar o **pacote de contexto** de uma task, o hub **consulta o
 grafo unificado** (`.claude/agents/graph.json`, gerado por `/sync-context`) — não só `agente↔agente`, mas

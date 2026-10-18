@@ -6,7 +6,7 @@
 #
 # Acionado pela dispatch-line do settings.json SO quando nao ha pwsh. Read-only, nunca bloqueia.
 #   - SessionStart -> 1 additionalContext curto avisando a indisponibilidade
-#   - PostToolUse / demais / erro / sem jq -> SILENCIO (exit 0)
+#   - UserPromptSubmit / demais / erro / sem jq -> SILENCIO (exit 0)
 
 emit_context() {
   jq -nc --arg e "$1" --arg c "$2" '{hookSpecificOutput:{hookEventName:$e,additionalContext:$c}}'
@@ -17,7 +17,7 @@ main() {
   local raw; raw="$(cat)" || exit 0
   [ -z "${raw//[[:space:]]/}" ] && exit 0
   local ev; ev="$(printf '%s' "$raw" | jq -r '.hook_event_name // "SessionStart"' 2>/dev/null)"
-  [ "$ev" = "SessionStart" ] || exit 0   # so no baseline de sessao; PostToolUse -> silencio
+  [ "$ev" = "SessionStart" ] || exit 0   # so no baseline de sessao; UserPromptSubmit -> silencio
   emit_context "$ev" "curation-nudge: avisos de staleness da curadoria indisponiveis sem PowerShell (pwsh) neste ambiente (J4). Rode no Windows/local com pwsh, ou use /init e /sync-context manualmente."
   exit 0
 }

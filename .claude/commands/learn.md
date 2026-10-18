@@ -1,5 +1,6 @@
 ---
 description: "Promover lição recorrente do acervo de SHIPPED a uma entrada de KB operations"
+disable-model-invocation: true
 argument-hint: "(sem argumento — varre o acervo)"
 ---
 
@@ -23,6 +24,9 @@ Boas práticas descobertas no **uso real** só viram valor quando **promovidas**
 reaplicável. O `/ship` arquiva "Lições aprendidas" em `SHIPPED_*.md` — acervo que ninguém relê. O
 `/learn` fecha esse loop: uma lição vira **prática** quando se **repete** (≥2 features). Destino é a KB
 camada `operations` — **não** uma rule sempre-ativa (mantém `rules/` enxuta e reusa a infra de KB).
+Se a prática vale só para **uma parte** do projeto (um glob: `migrations/**`), ela pode ganhar
+**também** uma rule de área, com `paths:`. Essa rule custa 0 token até o modelo ler um arquivo da área,
+e aí chega sozinha. É um complemento da entrada, não substituto (ver Passo 3).
 
 ## O que é promovível (o critério do fan-out)
 
@@ -71,14 +75,38 @@ idempotência). Agrupe as **pendentes** por **domínio** (do alvo da prática). 
 **Fan-out** via ferramenta **`Agent`**: 1 subagente por domínio, passando **o critério "O que é
 promovível"** (tabela acima) + as lições candidatas + a KB `operations` existente do domínio. Cada
 subagente identifica a lição **recorrente** (mesma prática em **≥2 features**) e propõe **1 entrada**
-`operations` / `content_type: runbook`, com `promoted_from: [features]`.
+`operations` / `content_type: runbook`, com `promoted_from: [features]` **e `enforced_by`**.
+
+**`enforced_by` é o que reprova sem a prática** — e a pergunta é do subagente porque é ele que está
+lendo o repositório: *existe teste, lint, hook ou gate que **falha** se alguém não seguir isto?*
+
+- **Existe** → liste o(s) mecanismo(s) pelo **nome exato** (arquivo/teste), nunca "a suíte".
+- **Não existe** → **`none`**, e o subagente **diz isso no rationale**. Não invente mecanismo, não
+  proponha criar um: o `/learn` promove conhecimento, não constrói guardrail.
+
+> **Por que o campo existe:** a entrada promovida é **prosa**. Sem ele, a prática coberta por teste
+> e a prática que ninguém cobra ficam indistinguíveis meses depois — *regra sem mecanismo* aplicada
+> ao command que existe para converter lição em prática. Contrato em
+> [`kb-taxonomy.md`](../rules/kb-taxonomy.md): **leia-a** antes do fan-out. Ela tem `paths:` e só
+> carrega sozinha quando um arquivo da KB é lido; gravar uma entrada nova não a carrega.
 
 ---
 
 ## Passo 3 — Plano (não ação)
 
 Consolide as propostas num **plano** `.claude/kb/_lessons/<data>-plan.md` — por domínio: a **prática**, a
-**entrada-alvo**, o `promoted_from` e o rationale. Apresente o resumo ao usuário.
+**entrada-alvo**, o `promoted_from`, o **`enforced_by`** e o rationale. Apresente o resumo ao usuário.
+
+**Rule de área (opcional, por prática).** Quando a prática é **prescritiva e presa a um glob**, e
+*"quem editar um arquivo dali sem saber disso erra"*, o plano propõe **também**
+`.claude/rules/area-<slug>.md` com o glob. Leia [`postures/path-rules.md`](../postures/path-rules.md)
+antes de propor: lá estão o formato, o orçamento e o limite medido (a rule carrega ao **ler** arquivo
+da área, não ao criar o primeiro). A entrada `operations` continua obrigatória, porque é ela que
+carrega `promoted_from` e `enforced_by`. A rule fica só com a parte que o modelo erraria sem saber.
+
+**O resumo mostra o `enforced_by` de cada entrada, e mostra `none` sem suavizar** — é o que dá
+conteúdo à aprovação do passo 4. *"Esta prática vai para a KB e nada no repositório a cobra"* é
+exatamente a informação que o usuário precisa ter **antes** de aprovar, não depois.
 
 ---
 
@@ -95,19 +123,27 @@ Só após aprovação. **Backup** de qualquer entrada afetada (molde `Backup-Fil
 de `.claude/kb/`**, em `.claude/.cache/kb-backup/<data>/` (gitignored). **Nunca** ao lado do plano em
 `_lessons/`: um `.md` com frontmatter de entrada dentro da KB é backup **invisível** ao lint e **duplica
 o id** no grafo (`kb-lint` acusa `misplaced-entry`). Gravar a(s) entrada(s) `operations` conforme
-[`kb-taxonomy.md`](../rules/kb-taxonomy.md) (frontmatter + **`promoted_from`**); registrar no **ledger**
-`.claude/kb/_lessons/<data>.md`.
+[`postures/kb-writing.md`](../postures/kb-writing.md) — **leia-o** (frontmatter + **`promoted_from`** + **`enforced_by`**);
+registrar no **ledger** `.claude/kb/_lessons/<data>.md`. **Guarde os `id` gravados** — são o escopo
+do passo 6. Rule de área aprovada: grave-a e rode `/sync-context`, para a lista `rules` do
+`AGENTS.md` ganhar a linha com a área.
 
 ---
 
 ## Passo 6 — Verificar
 
 ```powershell
-$findings = @(Test-LessonProvenance -KbDir .claude/kb -ArchiveDir .claude/sdd/archive)
+$findings  = @(Test-LessonProvenance  -KbDir .claude/kb -ArchiveDir .claude/sdd/archive)
+$findings += @(Test-LessonEnforcement -KbDir .claude/kb -Ids $idsGravados)   # só o que ACABOU de ser escrito
 ```
 
-`$findings` não-vazio (`lesson-without-source`) **ou** entrada nova inválida no `kb-lint` → **reverter do
-backup** e avisar (fail-safe; promoção não fica pela metade).
+`$findings` não-vazio (`lesson-without-source` · `lesson-without-enforcement`) **ou** entrada nova
+inválida no `kb-lint` → **reverter do backup** e avisar (fail-safe; promoção não fica pela metade).
+
+> **Duas perguntas, duas funções, dois escopos.** *"De onde veio"* (`promoted_from`) vale para a KB
+> inteira; *"o que a cobra"* (`enforced_by`) vale **só para as entradas deste ciclo** — a KB do
+> projeto pode ter entradas promovidas antes deste contrato existir, e elas não viram finding.
+> Passar `-Ids` com a KB toda **quebra** essa retrocompatibilidade.
 
 ---
 
@@ -123,8 +159,12 @@ práticas promovidas, entradas criadas, `promoted_from` por entrada.
 - **Só o recorrente** (≥2 features); lição `[pontual]` não promove — vira ruído na KB.
 - **Não invente recorrência** sem ≥2 fontes reais.
 - **Plano → aprova → aplica** com **backup**; nunca grava sem `promoted_from`/sem aprovação.
+- **Nunca grave entrada sem `enforced_by`.** `none` é resposta legítima; chave ausente ou vazia não
+  é — **não invente um mecanismo** para preencher o campo, e **não crie guardrail** aqui (o `/learn`
+  promove conhecimento; construir mecanismo é trabalho de feature, com ciclo próprio).
 - **Nunca-destrutivo**: não toca o acervo `archive/` (só lê — é histórico imutável; a proveniência
   mora na KB); não repromove o já promovido (`promoted_from` é idempotente).
 - **Não promova entre domínios** diferentes (promove dentro do domínio).
-- Destino é a KB `operations` — **nunca** uma rule sempre-ativa.
+- Destino é a KB `operations` — **nunca** uma rule sempre-ativa. Rule de **área** (`paths:`) é
+  complemento opcional aprovado junto, nunca no lugar da entrada.
 - Sem engine — `Agent` nativo + a verificação determinística (`tools/learn.ps1`).

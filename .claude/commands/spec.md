@@ -3,7 +3,7 @@ description: "Fase 2 SDD — arquitetura e spec técnica"
 argument-hint: "<caminho do DEFINE>"
 ---
 
-# /design — Fase 2 (Design)
+# /spec — Fase 2 (Design)
 
 Desenhar **como** construir o que o DEFINE pediu.
 

@@ -21,14 +21,24 @@ estiver, volte ao `/build`.
      (prática reaplicável, recorrente) ou `[pontual]` (one-off). É o insumo do `/learn` (G7), que
      promove o recorrente a uma entrada de KB `operations`. Aditivo (lições sem marca seguem válidas).
    - Recomendações para trabalho futuro
-3. Mova/aponte os artefatos da feature (BRAINSTORM/DEFINE/DESIGN/BUILD_REPORT) para o
-   arquivo da feature.
+3. **MOVA os artefatos para `.claude/sdd/archive/<FEATURE>/`** — todos, sem exceção:
+   `features/{BRAINSTORM,DEFINE,DESIGN}_<FEATURE>.md` e **todos** os
+   `reports/BUILD_REPORT_<FEATURE>*.md`. Mover, não "apontar": o que fica em `reports/` é lido
+   como **build em andamento**, e o `/status` passa a listar como aberta uma feature encerrada.
+   - **Entrega em levas?** Uma feature com N relatórios (`BUILD_REPORT_<FEATURE>.md`,
+     `BUILD_REPORT_<FEATURE>_LEVA2.md`, …) mantém **todos** lado a lado no **mesmo**
+     `archive/<FEATURE>/` — o **diretório** é a identidade da feature, os nomes de arquivo são
+     livres. Não invente sufixo, não renomeie para caber, não crie frontmatter novo.
+   - **Verifique depois de mover:** `reports/` não pode ter nenhum `BUILD_REPORT_<FEATURE>*`
+     sobrando. O `sdd-lint` (`orphan-build-report`, roda no `/check`) reprova se sobrar.
 4. **Bump de versão** (se o projeto versiona — há `VERSION`/`CHANGELOG.md`): incremente o **patch**
    (`0.6.1`→`0.6.2`) por feature shipada, ou o **minor** ao fechar um EPIC; atualize `VERSION` +
    `CHANGELOG.md` e crie a **tag** git (`vX.Y.Z`) no merge. Sem `VERSION`, pule este passo.
-5. **Busca semântica (opt-in, degrada em silêncio):** `archive/` acabou de ganhar o `SHIPPED_*.md`
-   novo. Se a tool `mcp__semantic-kb__reindex` estiver disponível, chame `reindex(project_root=".")`.
-   Sem o MCP instalado (padrão), pule sem avisar (ver [`semantic-search.md`](../rules/semantic-search.md)).
+5. **Catálogo do archive:** `archive/` acabou de ganhar o `SHIPPED_*.md` novo, então o
+   `.claude/sdd/archive/_index.md` ficou stale. O passo 6 pega isso no `Invoke-Resync -Check` e o
+   regenera junto com os demais. O que cabe aqui é **escrever bem o Resumo do SHIPPED**, a frase que
+   responde *"o que esta feature resolveu?"*: é ela que vira a linha do catálogo que a busca por
+   significado lê (ver [`semantic-search.md`](../rules/semantic-search.md)).
 6. **Reindexar o que a feature mexeu — o gancho de curadoria.** Uma feature costuma adicionar
    command, rule ou agente, e é aí que os índices derivados (`AGENT_MAP.md`, `graph.json`, a lista de
    rules do `AGENTS.md`, a tabela de commands do `CLAUDE.md`) ficam **stale**. Cheque **antes** de
@@ -62,11 +72,15 @@ estiver, volte ao `/build`.
 | "O BUILD_REPORT está quase ✅, já posso arquivar" | Ship só depois do ✅ verificado. Arquivar build incompleto enterra dívida. |
 | "Os Success Criteria 'claramente' foram atingidos" | Só escreva o SHIPPED com evidência de cada critério — não com a sensação de que bateu. |
 | "Pulo as lições aprendidas, não houve nada de novo" | A seção é barata e é o que alimenta o próximo ciclo. "Nada novo" também é uma lição — registre. |
+| "O BUILD_REPORT pode ficar em `reports/`, eu aponto para ele no SHIPPED" | Não pode. `reports/` significa **build em andamento** — deixar o arquivo lá faz o `/status` anunciar como aberta uma feature encerrada e sugerir `/ship` de novo. Mover é o passo, não uma preferência de organização. |
+| "São 2 relatórios (entrega em levas), não cabe um por feature no archive" | Cabe: `archive/<FEATURE>/` aceita **N** relatórios lado a lado. O diretório é a identidade — não renomeie nem invente sufixo para "caber". |
 | "Peço ao usuário para rodar `/sync-context` depois" | Você **pode** disparar (`Skill`) e o comando é idempotente/não-destrutivo. Pedir ao humano o que você mesmo executa é como o índice fica stale — e como o agente vira um formulário. |
 
 ## O que NÃO fazer
 
 - Escrever o SHIPPED com o BUILD_REPORT em 🔄/❌.
+- Deixar qualquer `BUILD_REPORT_<FEATURE>*` em `reports/` depois de arquivar (passo 3) — é o que
+  faz o `/status` mentir; o `sdd-lint` acusa `orphan-build-report`.
 - Afirmar Success Criteria atingidos sem evidência.
 - Mergear na `main` sem confirmação explícita (`main` é protegida).
 - Disparar `/sync-context` **sem checar** o drift antes (vira ruído) ou **sem anunciar** (o usuário

@@ -1,4 +1,4 @@
-# Agent-routing — avançado (carga SOB DEMANDA, fora do always-on)
+﻿# Agent-routing — avançado (carga SOB DEMANDA, fora do always-on)
 
 > **Este arquivo NÃO é carregado automaticamente.** Ele vive em `.claude/postures/` de propósito: o
 > harness varre `.claude/rules/`, **não** esta pasta — então estas seções custam **0 token** até
@@ -34,15 +34,16 @@ dele, em vez de improvisar. Use-o para responder, sem varrer arquivos: *quem enc
 > O grafo é **gerado** (não editar à mão); rode `/sync-context` após curar agentes/KB/skills. O hub do
 > modo MAX consulta o mesmo grafo ao montar o pacote de uma task (ver [`max-mode.md`](max-mode.md)).
 
-**Entrega automática do grafo de pares (hook, não só instrução).** Ler o `graph.json` "antes de rotear"
-depende do líder lembrar — confiança de prompt, não mecanismo. O hook **`agent-graph-context`**
-(`SubagentStart`) fecha a lacuna **só** para `role`/`connects_to`: a cada subagente iniciado, injeta os
-dois via `additionalContext`, determinístico. O grafo **unificado** (KB/skills/domínio) continua sendo
-consulta sob demanda do líder — o hook não o injeta.
+**Sem entrega automática do grafo de pares — e isso foi medido, não presumido.** Um hook
+`agent-graph-context` (`SubagentStart`) injetava `role`/`connects_to` em todo subagente iniciado.
+Ele foi **removido em 2026-09-01** depois de um A/B: o subagente **recebia** o texto (transcrevia-o
+literalmente) e mesmo assim escolhia **o mesmo** próximo agente com e sem ele — porque
+[`agent-routing.md`](../rules/agent-routing.md) é always-on e o catálogo dela já sustenta a decisão.
+Ler o `graph.json` antes de rotear segue sendo do líder, por instrução; a única entrega automática que
+sobraria era redundante com uma rule que já está no contexto.
 
 **Sem backstop automático de staleness.** Nada verifica automaticamente se `graph.json` está
-sincronizado com o frontmatter dos agentes (o `resync-lint` saiu do CI na postura low-friction,
-2026-06-20) — rodar `/sync-context` após curar é responsabilidade de quem cura. `agent-lint` só checa
+sincronizado com o frontmatter dos agentes (o `resync-lint` não roda no CI) — rodar `/sync-context` após curar é responsabilidade de quem cura. `agent-lint` só checa
 integridade referencial (`connects_to` aponta a agente existente), não staleness.
 
 
@@ -53,12 +54,13 @@ O hub MAX alcança **qualquer** agente do grafo por uma relação **dedicada `:O
 **contrato de hub exclusivo**:
 
 - **Adesão automática:** agente é orquestrável pelo hub **iff** for um nó válido do grafo (`role` +
-  `connects_to`, já exigido pelo [`agent-lint`](../../../tools/agent-lint.ps1)) — nada mais a marcar.
+  `connects_to`, já exigido pelo `agent-lint` da camada `tools/`) — nada mais a marcar.
 - **Extensível sem editar lista:** novo agente (base ou de domínio via `/audit-agents`) vira nó → o hub
   o alcança **automaticamente**; sem lista hardcoded.
 - **Verificação:** `Get-HubGraph`/`Test-HubReachability` (`tools/graph-export.ps1`) exigem **0 agente
   órfão** do hub.
-- **Base pronta p/ neo4j (H4, adiado):** `:Hub`/`:ORCHESTRATES` já exportam p/ `graph.cypher`.
+- **Base pronta p/ neo4j (H4, adiado):** `:Hub`/`:ORCHESTRATES` saem no dump Cypher, que é
+  **sob demanda** (`Invoke-GraphExport -Cypher`) — não vem versionado no projeto.
 
 **Uso da KB pelo hub:** ao montar o **pacote de contexto** de uma task, o hub **consulta a KB do domínio**
 e injeta as entradas relevantes (por default `operations`+`implementation`; reusa `Build-KbIndex`) — aterra
@@ -84,6 +86,7 @@ objetivo pequeno que caberia num expert único. Definição do gatilho e como o 
 | Preparar commit/branch/PR | `git-workflow` |
 | Documentar/registrar o que mudou ou como funciona (fora da KB) | `documenter` (proativo; ou `/document` em lote) |
 | Validar runtime de um alvo externo / mapear um produto sem o fonte | `external-observer` (caixa-preta, read-only; ação **outward** = confirmar a cada uso). Distinto do `validator` (caixa-branca, build próprio vs AT) |
+| Entender um artefato sem o fonte (binário, app Electron/ASAR, APK, .NET, firmware, HAR/pcap salvo) | `reverse-engineer` (estático primeiro; licença/autorização antes; executar o alvo = OK + isolamento) → `security-reviewer` (segredo/cripto embutidos) + `external-observer` (o mesmo produto rodando) |
 | Criar/revisar/refinar interface (UI/frontend) | `designer` → aponta p/ a skill `impeccable` (`/supplements design`) quando instalada; sem ela, aplica a disciplina genérica direto |
 | Instrumentar/revisar tracking (analytics, pixels, dataLayer, GTM, CAPI, UTM) | `tracker` (consent-first, dedup por `event_id`, PII hasheada) → `security-reviewer` (PII/segredos) + `external-observer` (validar disparo em runtime) |
 

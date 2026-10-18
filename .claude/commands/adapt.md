@@ -1,24 +1,24 @@
 ---
-description: "Adota um projeto existente (brownfield) — detecta stack/higiene, propõe contexto e ondas retroativas, delega a curadoria ao /init"
+description: "Adota um projeto existente (brownfield) — detecta stack/higiene, propõe contexto e ondas retroativas, delega a curadoria ao /curate"
 ---
 
 # /adapt — adotar um projeto existente (brownfield)
 
 Adapta a metodologia a um repositório que **já estava em desenvolvimento**: **detecta** a
 stack e a higiene (testes/CI/docs) a partir do que já existe, **propõe** o contexto do projeto
-e as **ondas retroativas** para as lacunas, e **delega a curadoria ao `/init`**. É o contraponto
+e as **ondas retroativas** para as lacunas, e **delega a curadoria ao `/curate`**. É o contraponto
 do greenfield (`onboarding/new-project.ps1` + `/setup` do zero).
 
 > Feature **G5** (EPIC G — curadoria/auto-otimização). O `/adapt` faz **só** o brownfield-
 > específico (detecção + diagnóstico + proposta de contexto). A curadoria em si
-> (`/audit-agents`→`/train-kb`→`/sync-context`) é do **`/init`** (G1) — não reimplementada aqui.
+> (`/audit-agents`→`/train-kb`→`/sync-context`) é do **`/curate`** (G1) — não reimplementada aqui.
 
 ---
 
 ## Uso
 
 ```text
-/adapt            # diagnóstico → propõe contexto + retro-ondas → delega ao /init
+/adapt            # diagnóstico → propõe contexto + retro-ondas → delega ao /curate
 /adapt --report   # só o diagnóstico (stack + higiene + retro-ondas), read-only
 ```
 
@@ -31,14 +31,19 @@ Carregue as funções e gere o relatório de estado:
 ```text
 # resolva $toolsRoot pela cascata (rules/tooling.md): relativo → $env:SDD_WORKFLOW_HOME → degradação
 . "$toolsRoot/adapt.ps1"
-$stack   = Get-StackSignals   -Root .
-$hygiene = Get-ProjectHygiene -Root .
-Format-AdaptReport -Stack $stack -Hygiene $hygiene
+$stack     = Get-StackSignals    -Root .
+$workspace = Get-WorkspaceLayout -Root .
+$hygiene   = Get-ProjectHygiene  -Root .
+Format-AdaptReport -Stack $stack -Hygiene $hygiene -Workspace $workspace
 ```
 
 - `Get-StackSignals` infere a stack por **presença de manifestos** (`pyproject.toml`,
-  `package.json`, `dbt_project.yml`, `go.mod`, `*.csproj`, `Dockerfile`, `*.tf`…) — vazio se
-  nada reconhecido (**não inventa**).
+  `package.json`, `dbt_project.yml`, `go.mod`, `*.csproj`, `Dockerfile`, `*.tf`, `schema.prisma`…)
+  — vazio se nada reconhecido (**não inventa**).
+- `Get-WorkspaceLayout` reconhece **monorepo** (`pnpm-workspace.yaml`, `turbo.json` ou `workspaces`
+  no `package.json` da raiz) e lista os pacotes um a um, com a stack de cada. Sem marcador, devolve
+  `$null` e o relatório fica como antes. Num monorepo, o rascunho do Passo 3 descreve a stack **por
+  pacote**, não uma linha só para o repo.
 - `Get-ProjectHygiene` checa as 3 dimensões: **Testes · CI · Docs/convenções** (cada flag =
   existe ≥1 sinal).
 - As funções são **read-only** — não tocam o repo.
@@ -46,7 +51,7 @@ Format-AdaptReport -Stack $stack -Hygiene $hygiene
 ### Se o repo já tem `.claude/` — modo absorção (automático, sem flag)
 
 Quando `Test-AbsorptionApplicable -Root .` for `$true` (o repo-alvo já tem `.claude/` **não-
-trivial**: ≥1 arquivo em `skills`/`agents`/`kb`/`rules`/`hooks`, ou `settings.json`, ou
+trivial**: ≥1 arquivo em `skills`/`agents`/`kb`/`rules`/`hooks`/`commands`, ou `settings.json`, ou
 `CLAUDE.md`/`AGENTS.md` na raiz), o `/adapt` **não** se limita a avisar — inventaria os ativos
 contra o baseline do scaffold, sempre **preservando** o que já existe:
 
@@ -55,7 +60,7 @@ $baseline = Resolve-AdaptBaselineRoot
 if ($baseline) {
     $inventory    = Get-ClaudeAssetInventory -Root . -BaselineRoot $baseline
     $targetJson   = Get-Content .claude/settings.json -Raw -ErrorAction SilentlyContinue
-    $baselineJson = Get-Content (Join-Path $baseline 'settings.json') -Raw -ErrorAction SilentlyContinue
+    $baselineJson = Get-Content (Join-Path $baseline '.claude/settings.json') -Raw -ErrorAction SilentlyContinue
     $settingsDiff = Compare-ClaudeSettingsKeys -TargetJson $targetJson -BaselineJson $baselineJson
     Format-AbsorptionReport -Inventory $inventory -SettingsDiff $settingsDiff
 } else {
@@ -64,12 +69,19 @@ if ($baseline) {
 }
 ```
 
-Cada ativo (`.claude/{skills,agents,kb,rules,hooks}` + `CLAUDE.md`/`AGENTS.md`) entra em um de 3
-buckets — **`Additive`** (só no baseline — candidato a adicionar), **`Own`** (só no projeto —
+Cada ativo (`.claude/{skills,agents,kb,rules,hooks,commands}` + `CLAUDE.md`/`AGENTS.md`) entra em
+um de 3 buckets — **`Additive`** (só no baseline — candidato a adicionar), **`Own`** (só no projeto —
 preservado, nada a fazer) ou **`Conflict`** (nos dois lados, conteúdo diverge — **preservado**,
 relatado lado a lado, decisão fica com o usuário depois). `settings.json` é comparado **por
 chave** (`hooks.<Event>`, `permissions.<allow|deny|ask>`) pela mesma lógica, já que é JSON
 estruturado, não arquivo solto.
+
+**Commands do projeto.** Para cada command próprio (`Own`) ou homônimo de um do scaffold
+(`Conflict`), o relatório traz uma **proposta de mapeamento** (`Get-CommandMappingHint`, pelo nome):
+*"aponta para a fase X: /spec"*, *"substituído por /review-diff"* ou *"sem equivalente"*. É só
+proposta: o command do projeto **nunca** é reescrito nem apagado. Ao apresentar, diga ao usuário
+quais aditivos do scaffold criariam um segundo caminho para o mesmo pedido (o `/review-diff` ao lado
+de um `/review` próprio, por exemplo) e deixe-o tirar esses da confirmação do Passo 2.
 
 Se `--report`/`--check`, **pare aqui** (a seção de absorção também é só diagnóstico).
 
@@ -80,6 +92,9 @@ Se `--report`/`--check`, **pare aqui** (a seção de absorção também é só d
 Se o inventário tem ≥1 item `Additive`, peça **uma única confirmação em lote**
 (`AskUserQuestion`): *"Detectei N itens do baseline ausentes no seu `.claude/` (liste). Adicionar
 todos?"* → (a) adicionar todos · (b) não adicionar agora · (c) revisar manualmente depois.
+
+Se o usuário tirou itens (os commands que duplicariam um do projeto, por exemplo), filtre antes:
+`$inventory = @($inventory | Where-Object RelativePath -notin $excluidos)`.
 
 Ao aceitar, rode `Add-AdditiveAssets -Root . -BaselineRoot $baseline -Inventory $inventory` — a
 **única** função que escreve no repo-alvo neste passo, e só nos itens `Additive` (por construção
@@ -105,9 +120,9 @@ Sem itens `Additive` (ou sem baseline resolvido), pule direto para o Passo 3.
 
 ---
 
-## Passo 4 — Delegar a curadoria ao `/init`
+## Passo 4 — Delegar a curadoria ao `/curate`
 
-Com o contexto gravado, **conduza o `/init`** (carregue a lógica de [`init.md`](init.md)). Ele é
+Com o contexto gravado, **conduza o `/curate`** (carregue a lógica de [`curate.md`](curate.md)). Ele é
 adaptativo e resumível: roda `/audit-agents` → `/train-kb` → `/sync-context` com gate por etapa,
 já lendo o contexto recém-preenchido. Opcional: mostre `Get-CurationStatus` antes/depois para
 situar o progresso.
@@ -119,7 +134,7 @@ situar o progresso.
 - **Detecção read-only:** `Get-StackSignals`/`Get-ProjectHygiene`/`Get-ClaudeAssetInventory`/
   `Compare-ClaudeSettingsKeys` nunca escrevem no repo-alvo.
 - **Contexto sob confirmação:** não gravar `project-context.md` sem o usuário aceitar.
-- **Não reimplementar a curadoria:** delega ao `/init` (G1).
+- **Não reimplementar a curadoria:** delega ao `/curate` (G1).
 - **Retro-ondas são recomendações** (testes/CI/docs em falta) — corrigir é outra etapa.
 - **Se o repo já tem `.claude/` não-trivial:** entra em modo absorção automaticamente (Passo 1),
   sem flag extra — inventaria e preserva, nunca sobrescreve em silêncio (ver seção acima).

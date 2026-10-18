@@ -1,3 +1,7 @@
+---
+paths:
+  - ".claude/kb/**"
+---
 # Docs-first — doc atual antes da memória (context7 → web → unverified)
 
 > **Otimização.** Ao documentar uma **lib/framework/SDK/CLI versionável** (camada `tools/`

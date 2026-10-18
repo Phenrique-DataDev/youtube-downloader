@@ -7,16 +7,21 @@ inicia trabalho de feature, escolha a fase certa e rode o command correspondente
 
 | Fase | Gatilhos (pt-BR + EN) | Command | Artefato |
 |------|------------------------|---------|----------|
-| 0. Brainstorm | "brainstorm", "explorar ideia", "vamos pensar em" | `/brainstorm` | `.claude/sdd/features/BRAINSTORM_<FEATURE>.md` |
-| 1. Define | "define", "requisitos", "critérios de aceite" | `/define` | `.claude/sdd/features/DEFINE_<FEATURE>.md` |
-| 2. Design | "design", "arquitetura", "spec técnica" | `/design` | `.claude/sdd/features/DESIGN_<FEATURE>.md` |
-| 3. Build | "build", "implemente", "execute" | `/build` | código + `.claude/sdd/reports/BUILD_REPORT_<FEATURE>.md` |
-| 4. Ship | "ship", "encerrar feature", "arquivar" | `/ship` | `.claude/sdd/archive/<FEATURE>/SHIPPED_<DATE>.md` |
+| 0. Brainstorm | "brainstorm", "explorar ideia", "vamos pensar em" · *"let's explore", "think through"* | `/brainstorm` | `.claude/sdd/features/BRAINSTORM_<FEATURE>.md` |
+| 1. Define | "define", "requisitos", "critérios de aceite" · *"requirements", "acceptance criteria"* | `/define` | `.claude/sdd/features/DEFINE_<FEATURE>.md` |
+| 2. Design | "design", "arquitetura", "spec técnica" · *"architecture", "tech spec", "write the spec"* | `/spec` | `.claude/sdd/features/DESIGN_<FEATURE>.md` |
+| 3. Build | "build", "implemente", "execute" · *"implement", "let's code this"* | `/build` | código + `.claude/sdd/reports/BUILD_REPORT_<FEATURE>.md` |
+| 4. Ship | "ship", "encerrar feature", "arquivar" · *"wrap up", "close the feature", "archive"* | `/ship` | `.claude/sdd/archive/<FEATURE>/SHIPPED_<DATE>.md` |
+
+> **O idioma do projeto é seu.** Os artefatos, o `BACKLOG.md` e as seções que os lints exigem
+> (`## Não exercitado` / `## Not exercised`, `## Aberto` / `## Open`, `## Regras críticas` /
+> `## Critical rules`) são reconhecidos em **português e inglês** — escreva no idioma do time e
+> **mantenha um só por documento**: o idioma do cabeçalho é o que decide como a seção é lida.
 
 ## Regras de engajamento
 
 1. **Uma fase por vez.** Não pule à frente. Se pedirem `/build` sem DESIGN, faça o
-   `/define`/`/design` primeiro ou pergunte em que fase entrar.
+   `/define`/`/spec` primeiro ou pergunte em que fase entrar.
 2. **Passe o artefato anterior.** Cada fase recebe o caminho do documento da fase prévia
    como contexto (BRAINSTORM → DEFINE → DESIGN → BUILD → SHIP).
 3. **Não funda fases** num só documento gigante. Um artefato por fase.
@@ -35,13 +40,7 @@ SDD completo:
 | Gatilho | Command | Artefato |
 |---------|---------|----------|
 | "tarefa pequena", "script rápido", "protótipo" | `/dev` | direto ao código (sem ciclo de 5 fases) |
-
-## Subagents
-
-Cada command é **auto-contido** (carrega a própria lógica de fase). Para trabalho focado e
-independente, as fases delegam a subagents genéricos (`explorer`, `test-writer`,
-`code-reviewer`) via ferramenta `Agent` — catálogo e roteamento em
-`.claude/rules/agent-routing.md`.
+| "redesign", "refazer a tela" · *"redesign this screen"* | `/dev` (trilha de redesign) | antes/depois aprovado + `visual-check` |
 
 ## Racionalizações comuns
 
@@ -53,20 +52,6 @@ Desculpas frequentes para pular uma fase ou um gate — e por que não colam:
 | "É uma mudança pequena, não precisa de fase" | Se é pequena mesmo, use o **Dev Loop** (`/dev`) — que é a fase certa, não a ausência dela. |
 | "Junto DEFINE e DESIGN num doc só pra ir mais rápido" | Um artefato por fase existe para cada gate ser verificável. Fundir esconde a lacuna que o gate pegaria. |
 | "O Clarity Score está em 11, mas dá pra seguir" | O mínimo (12/15) é o piso de "requisito não-ambíguo". Abaixo dele o DESIGN herda a ambiguidade — feche a lacuna, não o número. |
-
-## Match the Form to the Failure
-
-Ao escrever uma rule/command **nova**, escolha a forma pelo **tipo de falha** que ela precisa prevenir
-— a forma que blinda um tipo de falha **piora** outro:
-
-| Falha de base | Forma certa | Forma errada |
-|----------------|-------------|--------------|
-| Pula/viola a regra sob pressão (sabe, mas ignora) | Proibição + tabela de racionalização + red flags (ex.: a seção acima) | Orientação frouxa ("prefira...", "considere...") |
-| Cumpre, mas a saída sai na forma errada (formato inchado, veredito enterrado, spec reescrita) | Receita positiva: diga o que a saída **é** — as partes, em ordem | Lista de proibições ("não faça X", "nunca narre Y") |
-| Omite um elemento obrigatório de algo que já produz | Campo/seção **estrutural** obrigatória no template | Lembrete em prosa perto do template |
-| Comportamento deveria depender de uma condição | Condicional amarrado a um **predicado observável** ("se a KB tem ≥1 domínio…") | Regra incondicional + cláusulas de exceção soltas |
-
-Identifique a falha-alvo **primeiro**; a forma vem depois — não o inverso.
 
 ## O que NÃO fazer
 

@@ -1,7 +1,7 @@
 # Scaffold version — gerado por onboarding/new-project.ps1
 # Identifica o framework que gerou este projeto (para upgrades futuros).
-generated_at: 2026-07-20T19:49:36.4547592-03:00
-template_version: 0.9.1
-framework_commit: 1e31dad
+generated_at: 2026-10-17T21:56:13.4284021-03:00
+template_version: 0.11.57
+framework_commit: 9e2291d
 profile: full
 framework_root: C:/Users/Pedro/Documents/Claude/Repositorios

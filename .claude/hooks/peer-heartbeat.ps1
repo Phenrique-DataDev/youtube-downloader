@@ -4,11 +4,15 @@
     quanto à curadoria; o único lugar escrito é .claude/.cache/peers/ (gitignored).
 
 .DESCRIPTION
-    Registrado no .claude/settings.json (hooks.SessionStart matcher "*" e hooks.PostToolUse matcher
-    "Write|Edit"), ao lado do curation-nudge. Em cada disparo:
+    Registrado no .claude/settings.json (hooks.SessionStart matcher "*" e hooks.UserPromptSubmit
+    matcher "*"), ao lado do curation-nudge. Em cada disparo:
       - SessionStart -> grava/atualiza a presença (id=session_id, branch, summary derivado) e emite
                         additionalContext: o PRÓPRIO id do peer + peers ativos + recados (habilita /peers).
-      - PostToolUse  -> refresca só o heartbeat, respeitando o cooldown (silêncio).
+      - UserPromptSubmit -> refresca só o heartbeat, respeitando o cooldown (silêncio). Este é o
+                        gatilho atual: 1x/turno. Era PostToolUse:Write|Edit até 2026-08-09, mas
+                        cada disparo custa ~510ms (367ms só de startup do pwsh) e >98% saíam
+                        calados pelo cooldown -- numa sessão real, ~9 min de wall-clock jogados
+                        fora. PostToolUse segue aceito (projetos com settings.json antigo).
       - stdin inválido / fora de projeto / tools ausente / qualquer erro -> SILÊNCIO (exit 0).
 
     Toda a lógica determinística vive em tools/peers.ps1 (resolvido pela cascata $toolsRoot da
@@ -93,6 +97,13 @@ function Format-PeerAnnounce {
 
 # --- Fluxo principal --------------------------------------------------------------------------
 function Invoke-PeerHeartbeat {
+    # 0) Forca stdout em UTF-8 sem BOM: o texto emitido tem acentuacao (pt-BR) e o console do
+    #    pwsh no Windows NAO escreve UTF-8 em stdout redirecionado -- sem isto o JSON sai na
+    #    codepage OEM e chega corrompido ao modelo (medido byte a byte). Mesmo molde do
+    #    agent-graph-context.ps1. Falha aqui NAO aborta o hook: encoding ruim e' melhor que
+    #    hook desativado (num guard, o `return` viraria passthrough silencioso).
+    try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch { }
+
     # 1) payload (falha -> silêncio)
     try { $raw = [Console]::In.ReadToEnd() } catch { return }
     if ([string]::IsNullOrWhiteSpace($raw)) { return }
@@ -114,7 +125,9 @@ function Invoke-PeerHeartbeat {
 
     $board = Resolve-PeerBoard -Root $root
 
-    if ($eventName -eq 'PostToolUse') {
+    # UserPromptSubmit e o gatilho atual (1x/turno); PostToolUse fica aceito para nao quebrar
+    # projetos cujo settings.json ainda nao foi migrado. Ambos: refresh silencioso.
+    if ($eventName -in @('PostToolUse', 'UserPromptSubmit')) {
         # refresca o heartbeat (cooldown interno); silêncio sempre
         try { Update-PeerHeartbeat -BoardDir $board -Id $selfId | Out-Null } catch { Write-Verbose "heartbeat não atualizado: $($_.Exception.Message)" }
         return

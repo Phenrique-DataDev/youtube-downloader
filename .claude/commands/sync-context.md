@@ -38,22 +38,26 @@ usuário se nada foi curado ainda (talvez ele queira rodar `/audit-agents` / `/t
 . "$toolsRoot/resync.ps1"   # Invoke-Resync — reusa Build-AgentMap/Build-KbIndex/Invoke-GraphExport
 ```
 
-A regeneração dos **3 artefatos derivados** (mapa + grafo + índice-KB) é do **`Invoke-Resync`**
-(feature `auto-resync`) — a **mesma** função que a criação (`/audit-agents`·`/train-kb`·`/skill-gap`)
-chama ao fechar o ciclo. Não refie os geradores à mão aqui; o driver é a **fonte única**.
+A regeneração dos **5 artefatos derivados** (mapa + grafo + índice-KB + índice-docs + catálogo do
+archive) é do
+**`Invoke-Resync`** (feature `auto-resync`) — a **mesma** função que a criação
+(`/audit-agents`·`/train-kb`·`/skill-gap`) chama ao fechar o ciclo. Não refie os geradores à mão
+aqui; o driver é a **fonte única**.
 
 ---
 
 ## Passo 2 — Regenerar os artefatos derivados (100% gerados)
 
 `Invoke-Resync -ClaudeDir .claude -Write` → regenera, de forma **determinística** e **idempotente**
-(2× = mesmos bytes; nós/entradas ordenados, **LF**, UTF-8 sem BOM), os três:
+(2× = mesmos bytes; nós/entradas ordenados, **LF**, UTF-8 sem BOM), os cinco:
 
 | Artefato | O que é |
 |----------|---------|
 | `.claude/agents/AGENT_MAP.md` | grafo **Mermaid** humano (comandos + agentes de núcleo/domínio, ordenados) |
-| `.claude/agents/graph.json` + `graph.cypher` | o **grafo unificado** (**H9**): agentes (`role`/`connects_to`) **+ KB** (`:KbEntry`, `:IN_DOMAIN`) **+ skills** (`:Skill`/`:PRESUPPOSES`) **+ domínios** (`:Domain`) **+ `:USES_SKILL`** **+ o `:Hub`** orquestrador-mestre (`:ORCHESTRATES` a todos — o **ápice**). JSON p/ consulta, Cypher p/ neo4j |
+| `.claude/agents/graph.json` | o **grafo unificado** (**H9**): agentes (`role`/`connects_to`) **+ KB** (`:KbEntry`, `:IN_DOMAIN`) **+ skills** (`:Skill`/`:PRESUPPOSES`) **+ domínios** (`:Domain`) **+ `:USES_SKILL`** **+ o `:Hub`** orquestrador-mestre (`:ORCHESTRATES` a todos — o **ápice**). JSON p/ consulta |
 | `.claude/kb/_index.yaml` | domínios da KB (ordenados): `layer`/`entries`/`unverified`. KB vazia → `domains: {}` |
+| `docs/_index.md` | índice das docs de `docs/` (link + título por `.md`, ordenado por path; itens `_`-prefixados fora). Sem docs → placeholder. É o alvo do ponteiro do [`AGENTS.md`](../../AGENTS.md) §*Documentação do projeto* |
+| `.claude/sdd/archive/_index.md` | **catálogo do archive**: uma linha por feature (link + título + resumo do `SHIPPED_*`, senão do `DEFINE_*`). É o que a busca por significado lê primeiro ([`semantic-search.md`](../rules/semantic-search.md)). Archive vazio → placeholder |
 
 O `AGENT_MAP.md` (humano) e o grafo (máquina) saem do **mesmo estado curado**, sempre em sincronia —
 `Invoke-Resync` só escreve o que **divergiu** (`-Write` é idempotente). São **100% gerados** — não editar à mão.
@@ -63,8 +67,9 @@ O `AGENT_MAP.md` (humano) e o grafo (máquina) saem do **mesmo estado curado**, 
 visão local "cérebro completo" **on-demand** (**não** versionar).
 
 **Ver o grafo (sem servidor):** `Invoke-GraphExport -Html` gera `graph.html` — página **interativa**
-(arrastar/zoom/clicar) que abre no navegador, **sem neo4j**. **Opt-in** e **gitignored** (view
-regenerável). O `graph.cypher` segue pronto p/ o neo4j **se** o volume um dia justificar.
+(arrastar/zoom/clicar) que abre no navegador, **sem neo4j** e **offline** (o vis-network vem
+embutido de `tools/vendor/`, não de CDN — medido: zero requisição externa). **Opt-in** e **gitignored** (view
+regenerável). Dump Cypher p/ neo4j **não** é artefato versionado: `Invoke-GraphExport -Cypher` o escreve sob demanda.
 
 Com `--dry-run`, passe `-Check` no lugar de `-Write` (não escreve; devolve o **drift** por artefato).
 
@@ -78,14 +83,16 @@ Use `Update-MarkedRegion` para preencher **apenas** o conteúdo entre os marcado
 | Doc | Região (`NAME`) | Conteúdo |
 |-----|-----------------|----------|
 | `CLAUDE.md` | `commands` | tabela de `/commands` (nome + propósito, **1 linha curta cada**) |
-| `AGENTS.md` | `rules` | lista de `rules/*.md` (**1 linha curta cada** — ver orçamento abaixo) |
+| `AGENTS.md` | `rules` | lista de `rules/*.md` (**1 linha curta cada** — ver orçamento abaixo); rule com `paths:` **diz a área** (ex.: *"só em `migrations/`"*) |
 | `AGENTS.md` | `kb` | domínios da KB por camada (de `_index.yaml`) |
 
 ### Orçamento destes blocos — são **sumários**, não cópias da regra
 
 Estes blocos são **always-on**: entram no contexto de **toda** sessão, para sempre. Uma descrição
-longa aqui é **custo puro** — no Claude Code o arquivo da regra **já está inteiro no contexto** (o
-harness varre `.claude/rules/`), então repetir o conteúdo dela aqui não informa nada novo.
+longa aqui é **custo puro**. No Claude Code o arquivo da regra **já está inteiro no contexto** (o
+harness varre `.claude/rules/`), então repetir o conteúdo dela aqui não informa nada novo. A exceção
+é a rule com `paths:` no frontmatter (rule de área): ela só entra quando um arquivo da área é lido.
+Para ela, a linha diz **onde** vale, e isso basta.
 
 - **Uma linha por item, ≤ ~12 palavras:** *o que é* + *quando serve* + o command entre parênteses.
 - **Não** copie detalhes de implementação, condições, dependências ou ressalvas da regra — o leitor
@@ -93,8 +100,7 @@ harness varre `.claude/rules/`), então repetir o conteúdo dela aqui não infor
 - O sumário existe para os harnesses que **não** auto-carregam `.claude/rules/` (Codex, Cursor): é
   como eles descobrem que a regra existe. Por isso o bloco **fica** — mas enxuto.
 
-> Em 2026-07-13 este bloco custava **1.120 tok** (descrições de 2-3 linhas) e foi enxugado para
-> ~370. Regenerar "caprichado" **desfaz** a economia: caprichar aqui é **encurtar**.
+> Mantenha as descrições em **uma linha** (~370 tok o bloco inteiro): caprichar aqui é **encurtar**.
 
 ---
 
@@ -102,11 +108,6 @@ harness varre `.claude/rules/`), então repetir o conteúdo dela aqui não infor
 
 Com `--dry-run`, rode `Invoke-Resync -ClaudeDir .claude -Check` (não escreve; devolve o drift por
 artefato) e apenas **liste** o que mudaria nos ponteiros — sem salvar. Útil para conferir antes de aplicar.
-
-**Busca semântica (opt-in, degrada em silêncio):** fora de `--dry-run`, se a tool
-`mcp__semantic-kb__reindex` estiver disponível, chame `reindex(project_root=".")` — mesmo
-ponto natural de "índices desatualizados" deste comando. Sem o MCP instalado (padrão), pule
-sem avisar (ver [`semantic-search.md`](../rules/semantic-search.md)).
 
 ---
 
@@ -129,7 +130,7 @@ Ponteiros: commands {…} · rules {…} · kb {…}
 - **Idempotência:** rodar 2× sobre o mesmo estado → `git diff` **vazio** (saída determinística,
   sem timestamps no conteúdo gerado).
 - **Nunca** escrever fora das regiões marcadas nem fora dos arquivos gerados.
-- Os artefatos gerados (`AGENT_MAP.md`, `graph.json`, `graph.cypher`, `_index.yaml`) são **100%
+- Os artefatos gerados (`AGENT_MAP.md`, `graph.json`, `_index.yaml`) são **100%
   derivados** do estado curado — não editar à mão (`graph.*` saem em **LF**; a determinismo deles é
   o que mantém o `git diff` vazio na 2ª passada).
 - O comando **não** orquestra a curadoria (isso é o **G1**); ele só reflete o estado atual.

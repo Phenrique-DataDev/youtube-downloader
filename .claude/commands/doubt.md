@@ -6,7 +6,7 @@ argument-hint: "<a decisão + sua conclusão atual>"
 # /doubt — review adversarial *in-flight*
 
 Submeter uma **decisão ainda aberta** a um revisor de **fresh-context** que **não recebe a sua
-conclusão** e devolve **dúvidas** (não veredito). Distinto do [`/review`](review.md), que dá veredito
+conclusão** e devolve **dúvidas** (não veredito). Distinto do [`/review-diff`](review-diff.md), que dá veredito
 sobre um diff **já pronto**. Sem engine: o fresh-context é a ferramenta **`Agent` nativa**.
 
 > **Este command é a fonte única da postura** — não há rule sempre-ativa correspondente. O protocolo
@@ -54,7 +54,7 @@ Em dúvida sobre dúvida: se errar custa minutos, **siga**; se custa horas/dias,
 ## Saída
 
 A saída é uma lista de **dúvidas/perguntas** a reconciliar — **nunca** um veredito de severidade nem
-um juízo de aprovação/reprovação (isso é o `/review`). Formate como:
+um juízo de aprovação/reprovação (isso é o `/review-diff`). Formate como:
 
 ```text
 Dúvidas levantadas (fresh-context, adversarial):
@@ -85,7 +85,7 @@ Se o `Agent` não estiver disponível (ou você preferir não usá-lo), **não q
 ## O que NÃO fazer
 
 - Passar a sua conclusão/recomendação ao revisor — o valor inteiro está em omiti-la.
-- Emitir veredito de severidade (a escala que o `/review` usa) — a saída são **dúvidas**, não juízo final.
+- Emitir veredito de severidade (a escala que o `/review-diff` usa) — a saída são **dúvidas**, não juízo final.
 - Acionar `/doubt` em decisão trivial/reversível (fricção desnecessária).
 - Pular o **RECONCILE** — dúvida não reconciliada é dúvida não usada.
 - Construir loop de múltiplas rodadas — uma rodada basta.

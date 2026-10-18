@@ -1,5 +1,6 @@
 ---
 description: "Consolidar/compactar a KB (MERGE/COMPRESS/PRUNE) de forma nunca-destrutiva e verificável"
+disable-model-invocation: true
 ---
 
 # /reflect — consolidar/compactar a KB (G6)
@@ -93,6 +94,7 @@ estado. Relatório final: entradas fundidas/podadas/resumidas + tamanho antes×d
 - **Nunca** apague sem **backup + plano aprovado**; **nunca** descarte regra/caso (só inchaço).
 - **Nunca** apague uma entrada sem registrá-la em `consolidates`/`supersedes` de uma sobrevivente.
 - **Sem MERGE cross-domínio** (consolide dentro do domínio).
-- `id` único por domínio preservado; entradas seguem o frontmatter da `kb-taxonomy.md`.
+- `id` único por domínio preservado; entradas seguem o frontmatter do contrato de escrita
+  [`postures/kb-writing.md`](../postures/kb-writing.md) — **leia-o** antes de gravar.
 - Se a KB estiver enxuta → **no-op** silencioso (não force consolidação).
 - Sem engine/scoring — `Agent` nativo + a verificação determinística (`tools/reflect.ps1`).

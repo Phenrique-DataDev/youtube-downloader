@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Registrado no .claude/settings.json do projeto (hooks.SessionStart matcher "*" e
-    hooks.PostToolUse matcher "Write|Edit"). Em cada disparo decide:
+    hooks.UserPromptSubmit matcher "*"). Em cada disparo decide:
       - stdin inválido / fora de projeto / cooldown / path fora de escopo / tools ausente
                                                           -> SILÊNCIO (exit 0, sem stdout)
       - curadoria com ≥1 sinal de staleness              -> emite additionalContext (nudge)
@@ -30,7 +30,8 @@
 
 Set-StrictMode -Version Latest
 
-# Janela de cooldown do PostToolUse (segundos). SessionStart não aplica (baseline 1×/sessão).
+# Janela de cooldown dos gatilhos recorrentes (segundos) -- hoje UserPromptSubmit, 1x/turno.
+# SessionStart não aplica (baseline 1×/sessão).
 $script:CooldownSeconds = 1800
 
 # --- Acesso seguro a propriedade sob StrictMode (PSCustomObject do ConvertFrom-Json) ----------
@@ -332,6 +333,13 @@ function Get-CurationSnapshot {
 
 # --- Fluxo principal --------------------------------------------------------------------------
 function Invoke-CurationNudge {
+    # 0) Forca stdout em UTF-8 sem BOM: o texto emitido tem acentuacao (pt-BR) e o console do
+    #    pwsh no Windows NAO escreve UTF-8 em stdout redirecionado -- sem isto o JSON sai na
+    #    codepage OEM e chega corrompido ao modelo (medido byte a byte). Mesmo molde do
+    #    agent-graph-context.ps1. Falha aqui NAO aborta o hook: encoding ruim e' melhor que
+    #    hook desativado (num guard, o `return` viraria passthrough silencioso).
+    try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch { }
+
     # 1) Ler payload (falha -> silêncio)
     try { $raw = [Console]::In.ReadToEnd() } catch { return }
     if ([string]::IsNullOrWhiteSpace($raw)) { return }
@@ -353,9 +361,14 @@ function Invoke-CurationNudge {
     # o nudge eterno aparecia, uma vez por sessão, para sempre).
     $state = Read-NudgeState -Path $statePath
 
-    # 3) PostToolUse: filtra por escopo de path + cooldown (SessionStart não filtra: é o baseline)
-    if ($eventName -eq 'PostToolUse') {
-        if (-not (Test-IsCuratedPath $evt.FilePath)) { return }
+    # 3) Gatilhos recorrentes: cooldown sempre; filtro de path só onde existe FilePath.
+    #    - UserPromptSubmit (gatilho atual, 1x/turno): não carrega file_path, então avalia os
+    #      sinais direto -- o snapshot já lê o estado real do projeto, e o filtro de path era só
+    #      um proxy barato de "vale olhar". De quebra, pega divergência de qualquer origem.
+    #    - PostToolUse: mantido para projetos ainda no settings.json antigo.
+    #    - SessionStart: não filtra nada -- é o baseline 1x/sessão.
+    if ($eventName -in @('PostToolUse', 'UserPromptSubmit')) {
+        if ($eventName -eq 'PostToolUse' -and -not (Test-IsCuratedPath $evt.FilePath)) { return }
         if (-not (Test-CooldownElapsed -LastEpoch $state.LastEpoch -NowEpoch $now -WindowSeconds $script:CooldownSeconds)) { return }
     }
 

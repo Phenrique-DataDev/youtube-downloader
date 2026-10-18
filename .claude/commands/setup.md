@@ -14,11 +14,20 @@ Você vai configurar este projeto preenchendo `.claude/rules/project-context.md`
 2. **Explore o repositório** (estrutura, arquivos de manifesto como `pyproject.toml`,
    `package.json`, `dbt_project.yml`, `requirements.txt`; commits recentes) para inferir
    stack e domínio — assim você pergunta menos.
-3. **Pergunte o que faltar**, uma coisa de cada vez, preferindo múltipla escolha:
+3. **Pergunte o que faltar.** **Predicado:** se o passo 1 encontrou `status: template` — o
+   contexto que todo o resto consome ainda não existe —, carregue a skill
+   [`grill-me`](../skills/grill-me/SKILL.md) (tool `Skill`) e levante o que falta em rodadas, com
+   recomendação em cada pergunta. Reconfiguração de projeto já `status: active` pode ir direto ao
+   ponto que o usuário quer mudar. Cubra:
    - Nome e domínio do projeto
    - Stack (linguagem, runtime/framework, dados, infra/CI)
    - Convenções (lint, testes, versionamento)
-   Use `$ARGUMENTS` como nome do projeto se fornecido.
+   - **Convenção que vale só para uma parte do projeto** (uma pasta, um tipo de arquivo)? Se houver,
+     ela **não** vai para o `project-context.md`, que é always-on e vale para tudo. Leia
+     [`postures/path-rules.md`](../postures/path-rules.md) e ofereça gravá-la como rule de área
+     (`.claude/rules/area-<slug>.md` com `paths:`).
+   Use `$ARGUMENTS` como nome do projeto se fornecido. O que o passo 2 já inferiu do repositório
+   **não se pergunta** — confirma-se.
 4. **Preencha** `.claude/rules/project-context.md` com os valores reais e troque o
    marcador para `<!-- status: active -->`.
 5. **Aponte a área de trabalho.** Deixe explícito (sem criar nada à força):

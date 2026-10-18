@@ -76,9 +76,9 @@ aplica; esta seção os torna **explícitos e citáveis** (a rule é o texto, n�
    não o id de sessão.
 
 2. **Reagir a evento, nunca ficar em laço de espera.** O quadro é **pull on-demand** e movido a
-   **evento de hook** (`peer-heartbeat` em `SessionStart`/`PostToolUse`) — **jamais** um `sleep`-loop
+   **evento de hook** (`peer-heartbeat` em `SessionStart`/`UserPromptSubmit`) — **jamais** um `sleep`-loop
    sondando o board à espera de um recado. Um recado chega quando o destino roda `/peers` ou no
-   `SessionStart` dele (entrega assíncrona, não instantânea). Nunca bloqueie a sessão esperando ativamente:
+   `SessionStart` dele: startup, `/clear` ou compactação, não no resume (entrega assíncrona, não instantânea). Nunca bloqueie a sessão esperando ativamente:
    siga seu trabalho e leia a caixa no próximo pull. (É a razão de o design ser file-based, sem daemon.)
 
 3. **Verificação independente ao final — "terminou" é alegação, não evidência.** Quando um peer avisa
@@ -99,4 +99,4 @@ aplica; esta seção os torna **explícitos e citáveis** (a rule é o texto, n�
 - **Sem rede, sem PII:** o summary deriva de branch + fase SDD + **nomes** de arquivos (nunca conteúdo).
   O board é runtime (`.cache/`, gitignored) — fora do git e da distribuição.
 - **Mensageria assíncrona:** o recado chega na próxima vez que o destino rodar `/peers` (ou no
-  `SessionStart` dele) — não é entrega instantânea.
+  `SessionStart` dele, que não roda no resume) — não é entrega instantânea.

@@ -1,6 +1,10 @@
 ---
 description: "Relatório de telemetria por fase SDD (iterações; duração quando medida)"
 argument-hint: "(sem argumentos)"
+allowed-tools: Read Grep Glob
+disallowed-tools: Edit Write NotebookEdit
+metadata:
+  contract: read-only
 ---
 
 # /telemetry — telemetria por fase (piloto B6)
@@ -27,8 +31,8 @@ conteúdo.
 ## Como ler
 
 - `TotalIterations` / `AvgIterations` por fase = concentração de re-trabalho.
-- **Pico no `/build`** costuma apontar `/define`/`/design` vagos → revisar a clareza *upstream*
-  (o Clarity Score do `/define`, o gate do `/design`).
+- **Pico no `/build`** costuma apontar `/define`/`/spec` vagos → revisar a clareza *upstream*
+  (o Clarity Score do `/define`, o gate do `/spec`).
 - Fases comparáveis ao longo de várias features = onde investir esforço de processo.
 
 ## Notas

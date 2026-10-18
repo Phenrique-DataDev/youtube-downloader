@@ -117,6 +117,13 @@ function Get-ComplementaryRepoProtectedPathsInline {
 
 # --- Fluxo principal ----------------------------------------------------------------------------
 function Invoke-ComplementaryRepoGuard {
+    # 0) Forca stdout em UTF-8 sem BOM: o texto emitido tem acentuacao (pt-BR) e o console do
+    #    pwsh no Windows NAO escreve UTF-8 em stdout redirecionado -- sem isto o JSON sai na
+    #    codepage OEM e chega corrompido ao modelo (medido byte a byte). Mesmo molde do
+    #    agent-graph-context.ps1. Falha aqui NAO aborta o hook: encoding ruim e' melhor que
+    #    hook desativado (num guard, o `return` viraria passthrough silencioso).
+    try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch { }
+
     # 1) Ler payload (falha -> passthrough)
     try { $raw = [Console]::In.ReadToEnd() } catch { return }
     if ([string]::IsNullOrWhiteSpace($raw)) { return }

@@ -62,7 +62,7 @@ flowchart LR
 
 ## Conhecimento da KB consultado
 
-> Entradas da KB curada que **ancoraram** este design (passo *Aterrar na KB* do `/design`). Liste o `id`
+> Entradas da KB curada que **ancoraram** este design (passo *Aterrar na KB* do `/spec`). Liste o `id`
 > real de cada entrada usada — é o rastro de que o plano se apoia no conhecimento do projeto, não em
 > improviso. Se a KB ainda **não** foi treinada (`/train-kb`), deixe a nota de degradação.
 
