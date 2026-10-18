@@ -107,15 +107,6 @@ body::before {
 
 /* ---- cabecalho ---- */
 
-.micro {
-  margin: 0 0 var(--e3);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--texto-fraco);
-}
-
 .cabecalho h1 {
   margin: 0 0 var(--e2);
   font-size: clamp(1.75rem, 1.47rem + 1.14vw, 2.5rem);
@@ -124,9 +115,10 @@ body::before {
   line-height: 1.1;
 }
 
+/* Mede o mesmo que o formulario: em 46ch o texto quebrava na metade da
+   coluna e deixava "servidor nenhum." sozinho na segunda linha. */
 .subtitulo {
   margin: 0;
-  max-width: 46ch;
   color: var(--texto-suave);
   font-size: 0.875rem;
 }
@@ -165,7 +157,15 @@ body::before {
   display: flex;
   align-items: center;
   gap: var(--e2);
+  min-height: 2.75rem; /* alvo de toque: a linha de texto sozinha dava 20px */
   cursor: pointer;
+}
+
+.alternador input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--acento);
 }
 
 .botao-discreto {
@@ -271,10 +271,11 @@ select:disabled {
   cursor: not-allowed;
 }
 
+/* Seletor segmentado: as duas metades encostadas leem como UMA escolha entre
+   dois. Pilulas separadas com quadradinho pareciam dois checkboxes — e o
+   autostart, logo abaixo, e um checkbox de verdade. */
 .formatos {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--e2);
   margin: 0;
   padding: 0;
   border: 0;
@@ -285,65 +286,74 @@ select:disabled {
 }
 
 .opcao {
-  flex: 1 1 8rem;
+  position: relative;
+  flex: 1 1 0;
   min-height: 2.75rem;
   display: flex;
   align-items: center;
-  gap: var(--e3);
+  justify-content: center;
+  gap: var(--e2);
   padding: var(--e3) var(--e4);
   background: var(--superficie);
   border: 1px solid var(--borda);
-  border-radius: var(--pill);
+  color: var(--texto-suave);
   cursor: pointer;
   transition:
     border-color var(--transicao),
-    background var(--transicao);
+    background var(--transicao),
+    color var(--transicao);
+}
+
+.opcao:first-of-type {
+  border-radius: var(--pill) 0 0 var(--pill);
+}
+
+/* Borda compartilhada: sem a sobreposicao, o meio teria 2px. */
+.opcao + .opcao {
+  margin-left: -1px;
+  border-radius: 0 var(--pill) var(--pill) 0;
 }
 
 .opcao:hover {
-  border-color: var(--texto-fraco);
+  color: var(--texto);
 }
 
-/* O radio nativo continua sendo o radio nativo (teclado e semantica de graça);
-   so a pintura vira o quadradinho de estado da linguagem visual. */
+/* O radio nativo continua sendo o radio nativo (setas, Tab e semantica de
+   graça); so fica invisivel, e o estado passa para a metade inteira. */
 .opcao input[type='radio'] {
-  appearance: none;
-  margin: 0;
-  width: 0.875rem;
-  height: 0.875rem;
-  flex-shrink: 0;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-pequeno);
-  background: transparent;
-  transition:
-    background var(--transicao),
-    border-color var(--transicao);
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.opcao input[type='radio']:checked {
-  background: var(--acento);
-  border-color: var(--acento);
-}
-
+/* z-index: a borda clara da marcada fica por cima da borda compartilhada. */
 .opcao:has(input:checked) {
+  z-index: 1;
   background: var(--superficie-alta);
-  border-color: var(--texto-fraco);
+  border-color: var(--texto-suave);
+  color: var(--texto);
+  font-weight: 550;
+}
+
+.opcao:has(input:focus-visible) {
+  z-index: 2;
+  outline: 2px solid var(--branco);
+  outline-offset: 3px;
 }
 
 .opcao small {
   color: var(--texto-fraco);
   font-size: 0.75rem;
+  font-weight: 400;
 }
 
+/* padding-block, nao flex: `display: flex` no summary apaga o triangulo. */
 .avancado summary {
   cursor: pointer;
   width: fit-content;
-  font-size: 0.75rem;
+  padding-block: var(--e3);
+  font-size: 0.8125rem;
   color: var(--texto-suave);
-}
-
-.avancado[open] summary {
-  margin-bottom: var(--e3);
 }
 
 .dica {
@@ -351,10 +361,10 @@ select:disabled {
   font-size: 0.75rem;
 }
 
-/* Acao primaria: pill branca solida — a unica area clara da pagina, entao nao
-   precisa de tamanho nem de cor para ser encontrada. */
+/* Acao primaria: pill branca solida — a unica area clara da pagina. Ocupa a
+   coluna toda: com 100px num formulario de 512px, ficava menor que o campo. */
 .botao {
-  justify-self: start;
+  justify-self: stretch;
   min-height: 2.75rem;
   padding: var(--e3) var(--e6);
   background: var(--branco);
